@@ -63,6 +63,6 @@ for cnfg in cnfgs:
                 mode = 'Seq' + at
                 res.append(run_experiment(organism_name, context, mode, root, i))
                 np.savetxt("GFG.csv", res, delimiter =", ", fmt ='% s')
-            mode = 'SeqOnly'
-            res.append(run_experiment(organism_name, context, mode, root, i))
+            mode = anno_types[0]
+            res.append(run_experiment(organism_name, context, mode, root, i, is_seqonly=True))
             np.savetxt("GFG.csv", res, delimiter =", ", fmt ='% s')
