@@ -11,14 +11,16 @@ import configs as configs
 
 
 
-def run_experiment(organism_name, context, mode, root, i):
+def run_experiment(organism_name, context, mode, root, i, is_seqonly = False):
     test_percent = 0.2
     test_val_percent = 0.5
 
     X = np.load(root + organism_name +'/profiles/' + str(i) + '/X_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle=True)
     Y = np.load(root + organism_name +'/profiles/' + str(i) + '/Y_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle= True)
 
-    Y = np.asarray(pd.cut(Y, bins = 2, labels=[0,1], right=False))
+    Y = np.asarray(pd.cut(Y, bins=2, labels=[0, 1], right=False))
+    if is_seqonly:
+        X = np.delete(X, 4, 2)
     X = X.reshape(list(X.shape) + [1])
 
     x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=test_percent, random_state=None)
@@ -28,7 +30,7 @@ def run_experiment(organism_name, context, mode, root, i):
     PROFILE_ROWS = X.shape[1]
 
     model = Sequential()
-    model.add(Conv2D(16, kernel_size=(1, PROFILE_COLS), activation='relu', input_shape=(PROFILE_ROWS, PROFILE_COLS,1)))
+    model.add(Conv2D(16, kernel_size=(1, PROFILE_COLS), activation='relu', input_shape=(PROFILE_ROWS, PROFILE_COLS, 1)))
     model.add(Reshape((10, 10,16), input_shape=(100,1, 16)))
     model.add(Flatten())
     model.add(Dense(128, activation='relu'))
