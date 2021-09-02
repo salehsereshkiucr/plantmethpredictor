@@ -15,8 +15,8 @@ def run_experiment(organism_name, context, mode, root, i):
     test_percent = 0.2
     test_val_percent = 0.5
 
-    X = np.load(root + str(i) + '/X_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle=True)
-    Y = np.load(root + str(i) + '/Y_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle= True)
+    X = np.load(root + organism_name +'/profiles/' + str(i) + '/X_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle=True)
+    Y = np.load(root + organism_name +'/profiles/' + str(i) + '/Y_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle= True)
 
     Y = np.asarray(pd.cut(Y, bins = 2, labels=[0,1], right=False))
     X = X.reshape(list(X.shape) + [1])
@@ -46,12 +46,8 @@ def run_experiment(organism_name, context, mode, root, i):
     return step_res
 
 
-config = configs.Arabidopsis_config
-organism_name = config['organism_name']
-root = '/home/csgrads/ssere004/Organisms/'+ config['organism_name'] +'/profiles/'
-i = 1
+root = '/home/csgrads/ssere004/Organisms/'
 contexts = ['CG', 'CHG', 'CHH']
-anno_types = config['annot_types']
 
 cnfgs = [configs.Cucumber_config, configs.Tomato_config, configs.Arabidopsis_config, configs.Cowpea_config, configs.Rice_config]
 
@@ -59,9 +55,9 @@ res = []
 for cnfg in cnfgs:
     for context in contexts:
         for i in range(1, 5):
-            organism_name = config['organism_name']
-            root = '/home/csgrads/ssere004/Organisms/'+ config['organism_name'] +'/profiles/'
-            anno_types = config['annot_types']
+            organism_name = cnfg['organism_name']
+            root = '/home/csgrads/ssere004/Organisms/'+ cnfg['organism_name'] +'/profiles/'
+            anno_types = cnfg['annot_types']
             for at in anno_types:
                 mode = 'Seq' + at
                 res.append(run_experiment(organism_name, context, mode, root, i))
