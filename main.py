@@ -46,7 +46,7 @@ def run_experiment(organism_name, context, mode, root, i):
     return step_res
 
 
-root = '/home/csgrads/ssere004/Organisms/'
+root = '/home/csgrads/ssere004/output/'
 contexts = ['CG', 'CHG', 'CHH']
 
 cnfgs = [configs.Cucumber_config, configs.Tomato_config, configs.Arabidopsis_config, configs.Cowpea_config, configs.Rice_config]
