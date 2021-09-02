@@ -56,7 +56,6 @@ for cnfg in cnfgs:
     for context in contexts:
         for i in range(1, 5):
             organism_name = cnfg['organism_name']
-            root = '/home/csgrads/ssere004/Organisms/'+ cnfg['organism_name'] +'/profiles/'
             anno_types = cnfg['annot_types']
             for at in anno_types:
                 mode = 'Seq' + at
