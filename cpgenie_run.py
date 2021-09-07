@@ -11,6 +11,7 @@ def model(X_train, Y_train, X_test, Y_test):
     from hyperas.distributions import choice
     from keras.callbacks import ModelCheckpoint
     from keras.constraints import maxnorm
+    import tensorflow as tf
     datasize = 1000
     W_maxnorm = 3
     DROPOUT = {{choice([0.3,0.5,0.7])}}
@@ -30,7 +31,8 @@ def model(X_train, Y_train, X_test, Y_test):
     model.add(Activation('softmax'))
     myoptimizer = RMSprop(lr={{choice([0.01,0.001,0.0001])}}, rho=0.9, epsilon=1e-06)
     model.compile(loss='binary_crossentropy', optimizer=myoptimizer,metrics=['accuracy'])
-    model.fit(X_train, Y_train, batch_size=100, nb_epoch=5,validation_split=0.1)
+    with tf.device('/device:GPU:0'):
+        model.fit(X_train, Y_train, batch_size=100, nb_epoch=5,validation_split=0.1)
     score, acc = model.evaluate(X_test,Y_test)
     print('Test accuracy:', acc)
     return {'loss': -acc, 'status': STATUS_OK, 'model': model}
