@@ -52,7 +52,7 @@ def run_experiment(organism_name, context, i, root):
     y_pred = model.predict(x_test)
     y_pred = np.argmax(y_pred, axis=1)
     y_test = np.argmax(y_test, axis=1)
-    step_res = [organism_name, context, 'cpgenie', str(i), accuracy_score(y_test, y_pred), f1_score(y_test, y_pred, average='micro'), precision_score(y_test, y_pred, average='micro'), recall_score(y_test, y_pred, average='micro')]
+    step_res = [organism_name, context, 'cpgenie', str(i), accuracy_score(y_test, y_pred), f1_score(y_test, y_pred), precision_score(y_test, y_pred), recall_score(y_test, y_pred)]
     print(step_res)
     return step_res
 
