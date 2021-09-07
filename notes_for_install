@@ -1,2 +1,4 @@
 print(tf.__version__)
 pip3 install --user hyperopt
+
+conda create -n cpgenie2-ml python=2.7 anaconda
