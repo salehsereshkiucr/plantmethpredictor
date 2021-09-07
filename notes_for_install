@@ -1,0 +1,2 @@
+print(tf.__version__)
+pip3 install --user hyperopt
