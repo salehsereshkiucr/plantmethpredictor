@@ -59,18 +59,20 @@ def run_experiment(organism_name, context, i, root):
 
 root = '/home/csgrads/ssere004/output_cpgenie/'
 contexts = ['CG', 'CHG', 'CHH']
-cnfg = configs.Arabidopsis_config
-organism_name = cnfg['organism_name']
-context = contexts[0]
-i = 4
 res=[]
-residues = [('CHH', 1), ('CHG', 4)]
-for context, i in residues:
-    res.append(run_experiment(organism_name, context, i, root))
-    np.savetxt("GFG_cpgenie.csv", res, delimiter=", ", fmt='% s')
 
-#for i in range(1, 5):
-#    for context in contexts:
-#        res.append(run_experiment(organism_name, context, i, root))
-#        np.savetxt("GFG_cpgenie.csv", res, delimiter=", ", fmt='% s')
+
+
+#residues = [('CHH', 1), ('CHG', 4)]
+#for context, i in residues:
+#    res.append(run_experiment(organism_name, context, i, root))
+#    np.savetxt("GFG_cpgenie.csv", res, delimiter=", ", fmt='% s')
+
+cnfgs = [configs.Cowpea_config, configs.Rice_config, configs.Cucumber_config, configs.Tomato_config]
+for cnfg in cnfgs:
+    organism_name = cnfg['organism_name']
+    for i in range(1, 5):
+        for context in contexts:
+            res.append(run_experiment(organism_name, context, i, root))
+            np.savetxt("GFG_cpgenie.csv", res, delimiter=", ", fmt='% s')
 
