@@ -61,8 +61,6 @@ def run_experiment(organism_name, context, i, root, mode):
 
 
 root = '/home/csgrads/ssere004/output_cpgenieannot/'
-root = '/home/csgrads/ssere004/output_cpgenieannot'
-'/home/csgrads/ssere004/output_cpgenieannot/Cowpea/profiles/1'
 
 contexts = ['CG', 'CHG', 'CHH']
 res = []
