@@ -10,9 +10,9 @@ import configs as configs
 import pandas as pd
 
 
-def run_experiment(organism_name, context, i, root):
-    X = np.load(root + organism_name +'/profiles/' + str(i) + '/X_' + context + '__' + organism_name + '.npy', allow_pickle=True)
-    Y = np.load(root + organism_name +'/profiles/' + str(i) + '/Y_' + context + '__' + organism_name + '.npy', allow_pickle= True)
+def run_experiment(organism_name, context, i, root, mode):
+    X = np.load(root + organism_name +'/profiles/' + str(i) + '/X_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle=True)
+    Y = np.load(root + organism_name +'/profiles/' + str(i) + '/Y_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle=True)
     Y = np.asarray(pd.cut(Y, bins=2, labels=[0, 1], right=False))
     b = np.zeros((Y.size, Y.max()+1))
     b[np.arange(Y.size),Y] = 1
@@ -71,8 +71,9 @@ res=[]
 cnfgs = [configs.Cowpea_config, configs.Rice_config, configs.Cucumber_config, configs.Tomato_config]
 for cnfg in cnfgs:
     organism_name = cnfg['organism_name']
-    for i in range(1,2):
+    for i in range(1, 2):
         for context in contexts:
-            res.append(run_experiment(organism_name, context, i, root))
+            for mode in cnfg['annot_types']:
+                res.append(run_experiment(organism_name, context, i, root, mode))
             np.savetxt("GFG_cpgenie.csv", res, delimiter=", ", fmt='% s')
 
