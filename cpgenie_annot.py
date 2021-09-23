@@ -8,9 +8,11 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 import configs as configs
 import pandas as pd
+import sys
 
 
 def run_experiment(organism_name, context, i, root, mode):
+    mode = 'Seq' + mode
     X = np.load(root + organism_name +'/profiles/' + str(i) + '/X_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle=True)
     Y = np.load(root + organism_name +'/profiles/' + str(i) + '/Y_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle=True)
     Y = np.asarray(pd.cut(Y, bins=2, labels=[0, 1], right=False))
@@ -52,16 +54,17 @@ def run_experiment(organism_name, context, i, root, mode):
     y_pred = model.predict(x_test)
     y_pred = np.argmax(y_pred, axis=1)
     y_test = np.argmax(y_test, axis=1)
-    step_res = [organism_name, context, 'cpgenie', str(i), accuracy_score(y_test, y_pred), f1_score(y_test, y_pred), precision_score(y_test, y_pred), recall_score(y_test, y_pred)]
+    step_res = [organism_name, context, 'cpgenie_' + mode, str(i), accuracy_score(y_test, y_pred), f1_score(y_test, y_pred), precision_score(y_test, y_pred), recall_score(y_test, y_pred)]
     print(step_res)
     return step_res
 
 
 root = '/home/csgrads/ssere004/output_cpgenieannot/'
+root = '/home/csgrads/ssere004/output_cpgenieannot'
+'/home/csgrads/ssere004/output_cpgenieannot/Cowpea/profiles/1'
+
 contexts = ['CG', 'CHG', 'CHH']
-res=[]
-
-
+res = []
 
 #residues = [('CHH', 1), ('CHG', 4)]
 #for context, i in residues:
@@ -74,6 +77,11 @@ for cnfg in cnfgs:
     for i in range(1, 2):
         for context in contexts:
             for mode in cnfg['annot_types']:
-                res.append(run_experiment(organism_name, context, i, root, mode))
+                try:
+                    res.append(run_experiment(organism_name, context, i, root, mode))
+                    np.savetxt("GFG_cpgenie.csv", res, delimiter=", ", fmt='% s')
+                except:
+                    e = sys.exc_info()[0]
+                    print('exception in ' + organism_name + ' ' + str(i) + ' ' + context + ' ' + mode, e)
             np.savetxt("GFG_cpgenie.csv", res, delimiter=", ", fmt='% s')
 
