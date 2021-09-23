@@ -9,6 +9,7 @@ from sklearn.model_selection import train_test_split
 import configs as configs
 import pandas as pd
 import sys
+import traceback
 
 
 def run_experiment(organism_name, context, i, root, mode):
@@ -82,6 +83,7 @@ for cnfg in cnfgs:
                     np.savetxt("GFG_cpgenie.csv", res, delimiter=", ", fmt='% s')
                 except:
                     e = sys.exc_info()[0]
+                    traceback.print_exc()
                     print('exception in ' + organism_name + ' ' + str(i) + ' ' + context + ' ' + mode, e)
             np.savetxt("GFG_cpgenie.csv", res, delimiter=", ", fmt='% s')
 
