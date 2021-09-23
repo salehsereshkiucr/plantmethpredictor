@@ -57,7 +57,7 @@ def run_experiment(organism_name, context, i, root, mode):
     return step_res
 
 
-root = '/home/csgrads/ssere004/output_cpgenie/'
+root = '/home/csgrads/ssere004/output_cpgenieannot/'
 contexts = ['CG', 'CHG', 'CHH']
 res=[]
 
