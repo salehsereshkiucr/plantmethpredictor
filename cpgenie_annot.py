@@ -71,6 +71,7 @@ res = []
 #    np.savetxt("GFG_cpgenie.csv", res, delimiter=", ", fmt='% s')
 
 cnfgs = [configs.Cowpea_config, configs.Rice_config, configs.Cucumber_config, configs.Tomato_config]
+cnfgs = [configs.Arabidopsis_config]
 for cnfg in cnfgs:
     organism_name = cnfg['organism_name']
     for i in range(1, 2):
