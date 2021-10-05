@@ -3,6 +3,7 @@ import numpy as np
 import tensorflow as tf
 import pandas as pd
 from sklearn.model_selection import train_test_split
+import configs as configs
 
 
 num_steps = 200
@@ -12,9 +13,9 @@ display_step = 10
 
 
 
-def load_data(root, organism_name, context, i):
-    X = np.load(root + organism_name +'/profiles/' + str(i) + '/X_' + context + '__' + organism_name + '.npy', allow_pickle=True)
-    Y = np.load(root + organism_name +'/profiles/' + str(i) + '/Y_' + context + '__' + organism_name + '.npy', allow_pickle= True)
+def load_data(root, organism_name, context, i, mode):
+    X = np.load(root + organism_name +'/profiles/' + str(i) + '/X_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle=True)
+    Y = np.load(root + organism_name +'/profiles/' + str(i) + '/Y_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle= True)
     Y = np.asarray(pd.cut(Y, bins=2, labels=[0, 1], right=False))
     b = np.zeros((Y.size, Y.max()+1))
     b[np.arange(Y.size), Y] = 1
@@ -82,8 +83,11 @@ root = '/home/csgrads/ssere004/output_cpgenieannot/'
 organism_name = 'Arabidopsis'
 context = 'CG'
 i = 1
+mode = ''
+for at in configs.Arabidopsis_config['annot_types']:
+    mode+=at
 
-x_train, x_test, y_train, y_test = load_data(root, organism_name, context, i)
+x_train, x_test, y_train, y_test = load_data(root, organism_name, context, i, mode)
 X = tf.placeholder(tf.float32, [None, x_train.shape])
 Y = tf.placeholder(tf.float32, [None, y_train.shape])
 keep_prob = tf.placeholder(tf.float32)
