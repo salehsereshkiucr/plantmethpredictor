@@ -31,7 +31,7 @@ def run_experiment(organism_name, context, mode, root, i, is_seqonly = False):
 
     model = Sequential()
     model.add(Conv2D(16, kernel_size=(1, PROFILE_COLS), activation='relu', input_shape=(PROFILE_ROWS, PROFILE_COLS, 1)))
-    model.add(Reshape((10, 10,16), input_shape=(100,1, 16)))
+    model.add(Reshape((10, 10, 16), input_shape=(PROFILE_ROWS, 1, 16)))
     model.add(Flatten())
     model.add(Dense(128, activation='relu'))
     model.add(Dropout(0.5))

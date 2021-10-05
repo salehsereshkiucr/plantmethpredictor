@@ -31,10 +31,53 @@ def run_experiment(organism_name, context, i, root):
     W_maxnorm = 3
 
     model = Sequential()
-    model.add(Conv2D(128, kernel_size=(1, 5), activation='relu', input_shape=(PROFILE_COLS, PROFILE_ROWS, 1), padding='same', kernel_constraint=max_norm(W_maxnorm)))
-    model.add(MaxPooling2D(pool_size=(1, 5), strides=(1,3)))
-    model.add(Conv2D(256, kernel_size=(1, 5), activation='relu', padding='same', kernel_constraint=max_norm(W_maxnorm)))
-    model.add(MaxPooling2D(pool_size=(1, 5), strides=(1,3)))
+
+
+    W_conv2 = weight_variable([3, 3, 16, 32])
+    b_conv2 = bias_variable([32])
+    h_conv2 = tf.nn.relu(tf.nn.conv2d(h_conv1, W_conv2, strides=[1,1,1,1], padding='VALID') + b_conv2)
+    h_pool2 = tf.nn.max_pool(h_conv2,ksize=[1,3,3,1], strides=[1,3,3,1], padding='VALID')
+    print (h_pool2)
+
+    W_conv3 = weight_variable([3, 3, 32, 48])
+    b_conv3 = bias_variable([48])
+    h_conv3 = tf.nn.conv2d(h_pool2, W_conv3, strides=[1,1,1,1], padding='VALID')+ b_conv3
+    W_conv4 = weight_variable([3, 3, 48, 64])
+    b_conv4 = bias_variable([64])
+    h_conv4 = tf.nn.conv2d(h_conv3, W_conv4, strides=[1,1,1,1], padding='VALID')+ b_conv4
+
+    W_fc1 = weight_variable([2*2*64, 80])
+    b_fc1 = bias_variable([80])
+    h_pool4 = tf.reshape(h_conv4, [-1, 2*2*64])
+    h_fc1 = tf.matmul(h_pool4, W_fc1) + b_fc1
+    h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
+    print (h_fc1_drop)
+
+    W_fc2  = weight_variable([80, 1])
+    b_fc2  = bias_variable([1])
+    y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
+    print (y_conv)
+    loss = tf.reduce_mean(tf.square(y - y_conv),reduction_indices=[1])
+    train_step = tf.train.AdamOptimizer(1e-3).minimize(loss)
+
+
+
+
+
+    model.add(Conv2D(16, kernel_size=(1, 4), input_shape=(PROFILE_COLS, PROFILE_ROWS, 1), padding='VALID', use_bias=True))
+    model.add(Reshape((20, 20, 16), input_shape=(PROFILE_ROWS, 1, 16))) #end of first
+
+    model.add(Conv2D(32, kernel_size=(3, 3), activation='relu',  padding='VALID', use_bias=True))
+    model.add(MaxPooling2D(pool_size=(3, 3), strides=(3,3)))
+
+    ksize=[1,3,3,1], strides=[1,3,3,1], padding='VALID'
+
+    W_conv2 = weight_variable([3, 3, 16, 32])
+    b_conv2 = bias_variable([32])
+    h_conv2 = tf.nn.relu(tf.nn.conv2d(h_conv1, W_conv2, strides=[1,1,1,1], padding='VALID') + b_conv2)
+    h_pool2 = tf.nn.max_pool(h_conv2,ksize=[1,3,3,1], strides=[1,3,3,1], padding='VALID')
+    print (h_pool2)
+
     model.add(Conv2D(512, kernel_size=(1, 5), activation='relu', padding='same', kernel_constraint=max_norm(W_maxnorm)))
     model.add(MaxPooling2D(pool_size=(1, 5), strides=(1,3)))
     model.add(Flatten())
