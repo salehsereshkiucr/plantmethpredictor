@@ -80,11 +80,11 @@ for cnfg in cnfgs:
             for mode in cnfg['annot_types']:
                 ats += mode
             try:
-                res.append(run_experiment(organism_name, context, i, root, mode))
+                res.append(run_experiment(organism_name, context, i, root, ats))
                 np.savetxt("GFG_cpgenie.csv", res, delimiter=", ", fmt='% s')
             except:
                 e = sys.exc_info()[0]
                 traceback.print_exc()
-                print('exception in ' + organism_name + ' ' + str(i) + ' ' + context + ' ' + mode, e)
+                print('exception in ' + organism_name + ' ' + str(i) + ' ' + context + ' ' + ats, e)
             np.savetxt("GFG_cpgenie.csv", res, delimiter=", ", fmt='% s')
 
