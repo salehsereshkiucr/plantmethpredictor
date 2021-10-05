@@ -1,6 +1,6 @@
 import gc
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import configs as configs
@@ -15,6 +15,9 @@ display_step = 10
 
 def load_data(root, organism_name, context, i, mode):
     X = np.load(root + organism_name +'/profiles/' + str(i) + '/X_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle=True)
+    X = np.delete(X, range(4,X.shape[2]), 2)
+    b = [j for j in range(300)] + [j for j in range(700, 1000)]
+    X = np.delete(X, b, 1)
     Y = np.load(root + organism_name +'/profiles/' + str(i) + '/Y_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle= True)
     Y = np.asarray(pd.cut(Y, bins=2, labels=[0, 1], right=False))
     b = np.zeros((Y.size, Y.max()+1))
