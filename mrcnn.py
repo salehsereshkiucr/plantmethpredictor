@@ -83,7 +83,7 @@ root = '/home/csgrads/ssere004/output_cpgenieannot/'
 organism_name = 'Arabidopsis'
 context = 'CG'
 i = 1
-mode = ''
+mode = 'Seq'
 for at in configs.Arabidopsis_config['annot_types']:
     mode+=at
 
