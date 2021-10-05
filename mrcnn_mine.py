@@ -32,11 +32,11 @@ def run_experiment(organism_name, context, i, root):
 
     model = Sequential()
     model.add(Conv2D(128, kernel_size=(1, 5), activation='relu', input_shape=(PROFILE_COLS, PROFILE_ROWS, 1), padding='same', kernel_constraint=max_norm(W_maxnorm)))
-    model.add(MaxPooling2D(pool_size=(1, 5), strides=(1, 3)))
+    model.add(MaxPooling2D(pool_size=(1, 5), strides=(1,3)))
     model.add(Conv2D(256, kernel_size=(1, 5), activation='relu', padding='same', kernel_constraint=max_norm(W_maxnorm)))
-    model.add(MaxPooling2D(pool_size=(1, 5), strides=(1, 3)))
+    model.add(MaxPooling2D(pool_size=(1, 5), strides=(1,3)))
     model.add(Conv2D(512, kernel_size=(1, 5), activation='relu', padding='same', kernel_constraint=max_norm(W_maxnorm)))
-    model.add(MaxPooling2D(pool_size=(1, 5), strides=(1, 3)))
+    model.add(MaxPooling2D(pool_size=(1, 5), strides=(1,3)))
     model.add(Flatten())
     model.add(Dense(64, activation='relu'))
     model.add(Dropout(0.5))
@@ -71,8 +71,18 @@ res=[]
 cnfgs = [configs.Cowpea_config, configs.Rice_config, configs.Cucumber_config, configs.Tomato_config]
 for cnfg in cnfgs:
     organism_name = cnfg['organism_name']
-    for i in range(1, 4):
+    for i in range(1,2):
         for context in contexts:
             res.append(run_experiment(organism_name, context, i, root))
             np.savetxt("GFG_cpgenie.csv", res, delimiter=", ", fmt='% s')
 
+
+
+def weight_variable(shape):
+ initial = tf.compat.v1.truncated_normal(shape, stddev=0.1)
+ return tf.compat.v1.Variable(initial)
+
+
+def bias_variable(shape):
+ initial = tf.compat.v1.constant(0.1, shape=shape)
+ return tf.compat.v1.Variable(initial)
