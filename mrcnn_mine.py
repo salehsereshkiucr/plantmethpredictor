@@ -82,6 +82,6 @@ for cnfg in cnfgs:
             for at in configs.Arabidopsis_config['annot_types']:
                 mode+=at
             res.append(run_experiment(organism_name, context, i, root, mode))
-            np.savetxt("GFG_cpgenie.csv", res, delimiter=", ", fmt='% s')
+            np.savetxt("GFG_mrcnn.csv", res, delimiter=", ", fmt='% s')
 
 
