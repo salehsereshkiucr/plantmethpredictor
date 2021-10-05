@@ -82,6 +82,8 @@ def net_MRCNN(x_fs):
 
     return y_conv
 
+tf.disable_eager_execution()
+
 root = '/home/csgrads/ssere004/output_cpgenieannot/'
 organism_name = 'Arabidopsis'
 context = 'CG'
