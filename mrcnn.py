@@ -93,8 +93,8 @@ for at in configs.Arabidopsis_config['annot_types']:
     mode+=at
 
 x_train, x_test, y_train, y_test = load_data(root, organism_name, context, i, mode)
-X = tf.placeholder(tf.float32, [None, x_train.shape])
-Y = tf.placeholder(tf.float32, [None, y_train.shape])
+X = tf.placeholder(tf.float32, [None, len(x_train.shape)])
+Y = tf.placeholder(tf.float32, [None, len(y_train.shape)])
 keep_prob = tf.placeholder(tf.float32)
 
 logits = net_MRCNN(X)
