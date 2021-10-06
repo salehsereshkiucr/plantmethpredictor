@@ -56,14 +56,14 @@ def run_experiment(organism_name, context, i, root, mode):
     y_pred = model.predict(x_test)
     y_pred = np.argmax(y_pred, axis=1)
     y_test = np.argmax(y_test, axis=1)
-    step_res = [organism_name, context, 'cpgenie', str(i), accuracy_score(y_test, y_pred), f1_score(y_test, y_pred), precision_score(y_test, y_pred), recall_score(y_test, y_pred)]
+    step_res = [organism_name, context, 'mrcnn', str(i), accuracy_score(y_test, y_pred), f1_score(y_test, y_pred), precision_score(y_test, y_pred), recall_score(y_test, y_pred)]
     print(step_res)
     return step_res
 
 
 root = '/home/csgrads/ssere004/output_cpgenieannot/'
 contexts = ['CG', 'CHG', 'CHH']
-res=[]
+res = []
 
 
 
@@ -73,14 +73,13 @@ res=[]
 #    np.savetxt("GFG_cpgenie.csv", res, delimiter=", ", fmt='% s')
 
 cnfgs = [configs.Arabidopsis_config, configs.Cowpea_config, configs.Rice_config, configs.Cucumber_config, configs.Tomato_config]
-cnfgs = [configs.Arabidopsis_config]
 for cnfg in cnfgs:
     organism_name = cnfg['organism_name']
-    for i in range(1,2):
+    for i in range(1, 4):
         for context in contexts:
             mode = 'Seq'
             for at in configs.Arabidopsis_config['annot_types']:
-                mode+=at
+                mode += at
             res.append(run_experiment(organism_name, context, i, root, mode))
             np.savetxt("GFG_mrcnn.csv", res, delimiter=", ", fmt='% s')
 
