@@ -78,7 +78,7 @@ for cnfg in cnfgs:
     for i in range(1, 4):
         for context in contexts:
             mode = 'Seq'
-            for at in configs.Arabidopsis_config['annot_types']:
+            for at in cnfg['annot_types']:
                 mode += at
             res.append(run_experiment(organism_name, context, i, root, mode))
             np.savetxt("GFG_mrcnn.csv", res, delimiter=", ", fmt='% s')
