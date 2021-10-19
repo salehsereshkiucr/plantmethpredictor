@@ -54,12 +54,12 @@ def model(PROFILE_ROWS, PROFILE_COLS, block_size):
 res = []
 for context in contexts:
     for i in range(1, 4):
-        for i in range(len(window_sizes)):
-            window_size = window_sizes[i]
+        for w in range(len(window_sizes)):
+            window_size = window_sizes[w]
             X = np.load(root + organism_name + '/profiles/' + str(i) + '/X_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle=True)
             Y = np.load(root + organism_name + '/profiles/' + str(i) + '/Y_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle= True)
             x_train, y_train, x_test, y_test, x_val, y_val = data_preprocess(X, Y, window_size)
-            model = model(X.shape[1], X.shape[2], block_sizes[i])
+            model = model(X.shape[1], X.shape[2], block_sizes[w])
             opt = tf.keras.optimizers.SGD(lr=0.01)
             model.compile(loss=keras.losses.binary_crossentropy, optimizer=opt, metrics=['accuracy'])
             with tf.device('/device:GPU:0'):
