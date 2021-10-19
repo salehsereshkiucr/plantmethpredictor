@@ -38,10 +38,10 @@ def data_preprocess(X, Y, window_size):
 
 def model(PROFILE_ROWS, PROFILE_COLS, block_size):
     model = Sequential()
-    model.add(Conv2D(16, kernel_size=(4, 1), input_shape=(PROFILE_COLS, PROFILE_ROWS, 1), padding='VALID', use_bias=True))
+    model.add(Conv2D(16, kernel_size=(4, 1), input_shape=(PROFILE_COLS, PROFILE_ROWS, 1), padding='same', use_bias=True))
     model.add(Reshape((block_size[0], block_size[1], 16), input_shape=(PROFILE_ROWS, 1, 16))) #end of first
-    model.add(Conv2D(32, kernel_size=(3, 3), activation='relu',  padding='VALID', use_bias=True))
-    model.add(MaxPooling2D(pool_size=(3, 3), strides=(3,3), padding='VALID')) #end of second
+    model.add(Conv2D(32, kernel_size=(3, 3), activation='relu',  padding='same', use_bias=True))
+    model.add(MaxPooling2D(pool_size=(3, 3), strides=(3, 3), padding='same')) #end of second
     model.add(Conv2D(48, kernel_size=(3, 3), padding='VALID', use_bias=True))
     model.add(Conv2D(64, kernel_size=(3, 3), padding='VALID', use_bias=True)) #end of third
     model.add(Reshape((-1, 2*2*64), input_shape=(2, 2, 64)))
