@@ -14,6 +14,8 @@ organism_name = config['organism_name']
 mode = 'Seq'
 for at in config['annot_types']:
     mode += at
+
+
 window_sizes = [100, 200, 400, 800, 1000]
 contexts = ['CG', 'CHG', 'CHH']
 
@@ -24,7 +26,7 @@ root = '/home/csgrads/ssere004/output_cpgenieannot/'
 
 def data_preprocess(X, Y, window_size):
     X = np.delete(X, range(4, X.shape[2]), 2)
-    b = [j for j in range((1000-window_size)/2)] + [j for j in range(1000 - (1000-window_size)/2, 1000)]
+    b = [j for j in range(int((1000-window_size)/2))] + [j for j in range(1000 - int((1000-window_size)/2), 1000)]
     X = np.delete(X, b, 1)
     X = X.reshape(list(X.shape) + [1])
     Y = np.asarray(pd.cut(Y, bins=2, labels=[0, 1], right=False))
@@ -40,6 +42,7 @@ def model(PROFILE_ROWS, PROFILE_COLS):
     model.add(Dense(128, activation='relu'))
     model.add(Dropout(0.5))
     model.add(Dense(1, activation='sigmoid'))
+    return model
 
 res = []
 for context in contexts:
