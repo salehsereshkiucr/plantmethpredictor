@@ -10,7 +10,6 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 import configs as configs
 
 
-
 def run_experiment(organism_name, context, mode, root, i, is_seqonly = False):
     test_percent = 0.2
     test_val_percent = 0.5

@@ -13,13 +13,13 @@ import pandas as pd
 def run_experiment(organism_name, context, i, root, mode):
 
     X = np.load(root + organism_name +'/profiles/' + str(i) + '/X_' + context + '_' + mode +'_' + organism_name + '.npy', allow_pickle=True)
-    X = np.delete(X, range(4,X.shape[2]), 2)
+    X = np.delete(X, range(4, X.shape[2]), 2)
     b = [j for j in range(300)] + [j for j in range(700, 1000)]
     X = np.delete(X, b, 1)
     Y = np.load(root + organism_name +'/profiles/' + str(i) + '/Y_' + context + '_' + mode +'_' + organism_name + '.npy', allow_pickle= True)
     Y = np.asarray(pd.cut(Y, bins=2, labels=[0, 1], right=False))
     b = np.zeros((Y.size, Y.max()+1))
-    b[np.arange(Y.size),Y] = 1
+    b[np.arange(Y.size), Y] = 1
     Y = b
     X = X.reshape(list(X.shape) + [1])
     X = np.swapaxes(X,1,2)
