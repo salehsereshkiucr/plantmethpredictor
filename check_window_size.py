@@ -1,14 +1,13 @@
 import tensorflow as tf
-import configs as configs
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from tensorflow import keras
 from sklearn.model_selection import train_test_split
 from keras.layers import Activation,Dense
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Reshape
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score, precision_score, recall_score
+import configs as configs
 
 config = configs.Arabidopsis_config
 organism_name = config['organism_name']
