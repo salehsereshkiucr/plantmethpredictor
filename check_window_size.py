@@ -17,6 +17,8 @@ for at in config['annot_types']:
 
 
 window_sizes = [100, 200, 400, 800, 1000]
+block_sizes = [(10, 10), (20, 10), (20, 20), (40, 20), (50, 20)]
+
 contexts = ['CG', 'CHG', 'CHH']
 
 test_percent = 0.2
@@ -34,10 +36,15 @@ def data_preprocess(X, Y, window_size):
     x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=test_val_percent, random_state=None)
     return x_train, y_train, x_test, y_test, x_val, y_val
 
-def model(PROFILE_ROWS, PROFILE_COLS):
+def model(PROFILE_ROWS, PROFILE_COLS, block_size):
     model = Sequential()
-    model.add(Conv2D(16, kernel_size=(1, PROFILE_COLS), activation='relu', input_shape=(PROFILE_ROWS, PROFILE_COLS, 1)))
-    model.add(Reshape((10, 10, 16), input_shape=(PROFILE_ROWS, 1, 16)))
+    model.add(Conv2D(16, kernel_size=(4, 1), input_shape=(PROFILE_COLS, PROFILE_ROWS, 1), padding='VALID', use_bias=True))
+    model.add(Reshape((block_size[0], block_size[1], 16), input_shape=(PROFILE_ROWS, 1, 16))) #end of first
+    model.add(Conv2D(32, kernel_size=(3, 3), activation='relu',  padding='VALID', use_bias=True))
+    model.add(MaxPooling2D(pool_size=(3, 3), strides=(3,3), padding='VALID')) #end of second
+    model.add(Conv2D(48, kernel_size=(3, 3), padding='VALID', use_bias=True))
+    model.add(Conv2D(64, kernel_size=(3, 3), padding='VALID', use_bias=True)) #end of third
+    model.add(Reshape((-1, 2*2*64), input_shape=(2, 2, 64)))
     model.add(Flatten())
     model.add(Dense(128, activation='relu'))
     model.add(Dropout(0.5))
@@ -47,11 +54,12 @@ def model(PROFILE_ROWS, PROFILE_COLS):
 res = []
 for context in contexts:
     for i in range(1, 4):
-        for window_size in window_sizes:
+        for i in range(len(window_sizes)):
+            window_size = window_sizes[i]
             X = np.load(root + organism_name + '/profiles/' + str(i) + '/X_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle=True)
             Y = np.load(root + organism_name + '/profiles/' + str(i) + '/Y_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle= True)
             x_train, y_train, x_test, y_test, x_val, y_val = data_preprocess(X, Y, window_size)
-            model = model(X.shape[1], X.shape[2])
+            model = model(X.shape[1], X.shape[2], block_sizes[i])
             opt = tf.keras.optimizers.SGD(lr=0.01)
             model.compile(loss=keras.losses.binary_crossentropy, optimizer=opt, metrics=['accuracy'])
             with tf.device('/device:GPU:0'):
