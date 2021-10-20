@@ -51,13 +51,32 @@ res = []
 for context in contexts:
     for i in range(1, 2):
         for w in range(len(window_sizes)):
+            print(context, i, w)
             window_size = window_sizes[w]
             X = np.load(root + organism_name + '/profiles/' + str(i) + '/X_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle=True)
             Y = np.load(root + organism_name + '/profiles/' + str(i) + '/Y_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle= True)
             x_train, y_train, x_test, y_test, x_val, y_val = data_preprocess(X, Y, window_size)
-            model = model(x_train.shape[1], x_train.shape[2], block_sizes[w])
+            print('data preprocessed')
+            print('model inputs', x_train.shape[1], x_train.shape[2], block_sizes[w])
+
+            PROFILE_ROWS = x_train.shape[1]
+            PROFILE_COLS = x_train.shape[2]
+            block_size = block_sizes[w]
+
+
+            model = Sequential()
+            model.add(Conv2D(16, kernel_size=(1, PROFILE_COLS), activation='relu', input_shape=(PROFILE_ROWS, PROFILE_COLS, 1)))
+            model.add(Reshape((block_size[0], block_size[1], 16), input_shape=(PROFILE_ROWS, 1, 16)))
+            model.add(Flatten())
+            model.add(Dense(128, activation='relu'))
+            model.add(Dropout(0.5))
+            model.add(Dense(1, activation='sigmoid'))
+
+
+            print('model processed')
             opt = tf.keras.optimizers.SGD(lr=0.01)
             model.compile(loss=keras.losses.binary_crossentropy, optimizer=opt, metrics=['accuracy'])
+            print('ready to fit')
             with tf.device('/device:GPU:0'):
                 model.fit(x_train, y_train, batch_size=32, epochs=45, verbose=0, validation_data=(x_val, y_val))
             y_pred = model.predict(x_test)
@@ -69,4 +88,3 @@ for context in contexts:
 
 
 #_______________________________________________________________
-
