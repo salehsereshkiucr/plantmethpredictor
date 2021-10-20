@@ -31,6 +31,7 @@ def data_preprocess(X, Y, window_size):
     b = [j for j in range(int((1000-window_size)/2))] + [j for j in range(1000 - int((1000-window_size)/2), 1000)]
     X = np.delete(X, b, 1)
     X = X.reshape(list(X.shape) + [1])
+    #X = np.swapaxes(X, 1, 2)
     Y = np.asarray(pd.cut(Y, bins=2, labels=[0, 1], right=False))
     x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=test_percent, random_state=None)
     x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=test_val_percent, random_state=None)
@@ -38,13 +39,8 @@ def data_preprocess(X, Y, window_size):
 
 def model(PROFILE_ROWS, PROFILE_COLS, block_size):
     model = Sequential()
-    model.add(Conv2D(16, kernel_size=(4, 1), input_shape=(PROFILE_COLS, PROFILE_ROWS, 1), padding='same', use_bias=True))
-    model.add(Reshape((block_size[0], block_size[1], 16), input_shape=(PROFILE_ROWS, 1, 16))) #end of first
-    model.add(Conv2D(32, kernel_size=(3, 3), activation='relu',  padding='same', use_bias=True))
-    model.add(MaxPooling2D(pool_size=(3, 3), strides=(3, 3), padding='same')) #end of second
-    model.add(Conv2D(48, kernel_size=(3, 3), padding='VALID', use_bias=True))
-    model.add(Conv2D(64, kernel_size=(3, 3), padding='VALID', use_bias=True)) #end of third
-    model.add(Reshape((-1, 2*2*64), input_shape=(2, 2, 64)))
+    model.add(Conv2D(16, kernel_size=(1, PROFILE_COLS), activation='relu', input_shape=(PROFILE_ROWS, PROFILE_COLS, 1)))
+    model.add(Reshape((block_size[0], block_size[1], 16), input_shape=(PROFILE_ROWS, 1, 16)))
     model.add(Flatten())
     model.add(Dense(128, activation='relu'))
     model.add(Dropout(0.5))
@@ -53,7 +49,7 @@ def model(PROFILE_ROWS, PROFILE_COLS, block_size):
 
 res = []
 for context in contexts:
-    for i in range(1, 4):
+    for i in range(1, 2):
         for w in range(len(window_sizes)):
             window_size = window_sizes[w]
             X = np.load(root + organism_name + '/profiles/' + str(i) + '/X_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle=True)
@@ -69,3 +65,8 @@ for context in contexts:
             print(step_res)
             res.append(step_res)
             np.savetxt("GFG.csv", res, delimiter =", ", fmt ='% s')
+
+
+
+#_______________________________________________________________
+

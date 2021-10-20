@@ -24,14 +24,16 @@ def run_experiment(organism_name, context, i, root, mode):
     X = X.reshape(list(X.shape) + [1])
     X = np.swapaxes(X,1,2)
 
-    PROFILE_COLS = X.shape[1]
-    PROFILE_ROWS = X.shape[2]
+
+    PROFILE_COLS = X.shape[1] #4
+    PROFILE_ROWS = X.shape[2] #400
 
     test_percent = 0.2
     test_val_percent = 0.5
     x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=test_percent, random_state=None)
     x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=test_val_percent, random_state=None)
-
+    # x_train.shape = (80000, 4, 400, 1)
+    # y_train.shape = (80000, 2)
     W_maxnorm = 3
 
     model = Sequential()
@@ -82,5 +84,7 @@ for cnfg in cnfgs:
                 mode += at
             res.append(run_experiment(organism_name, context, i, root, mode))
             np.savetxt("GFG_mrcnn.csv", res, delimiter=", ", fmt='% s')
+
+
 
 
