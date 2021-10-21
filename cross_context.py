@@ -79,8 +79,8 @@ for context in contexts:
             with tf.device('/device:GPU:0'):
                 model.fit(x_train, y_train, batch_size=32, epochs=45, verbose=0, validation_data=(x_val, y_val))
             y_pred = model.predict(x_test)
-            mode = context+'-'+context_test
-            step_res = [organism_name, context, 'seq-only', window_size, mode, str(i), accuracy_score(y_test, y_pred.round()), f1_score(y_test, y_pred.round()), precision_score(y_test, y_pred.round()), recall_score(y_test, y_pred.round())]
+            context_mode = context+'-'+context_test
+            step_res = [organism_name, context, 'seq-only', window_size, context_mode, str(i), accuracy_score(y_test, y_pred.round()), f1_score(y_test, y_pred.round()), precision_score(y_test, y_pred.round()), recall_score(y_test, y_pred.round())]
             print(step_res)
             res.append(step_res)
             np.savetxt("GFG.csv", res, delimiter=", ", fmt ='% s')
