@@ -34,6 +34,15 @@ def data_preprocess(X, Y, window_size):
     x_train, x_val, y_train, y_val = train_test_split(X, Y, test_size=test_percent, random_state=None)
     return x_train, y_train, x_val, y_val
 
+def data_preprocess_test(X, Y, window_size):
+    X = np.delete(X, range(4, X.shape[2]), 2)
+    b = [j for j in range(int((1000-window_size)/2))] + [j for j in range(1000 - int((1000-window_size)/2), 1000)]
+    X = np.delete(X, b, 1)
+    X = X.reshape(list(X.shape) + [1])
+    #X = np.swapaxes(X, 1, 2)
+    Y = np.asarray(pd.cut(Y, bins=2, labels=[0, 1], right=False))
+    return X, Y
+
 
 res = []
 for context in contexts:
@@ -45,9 +54,10 @@ for context in contexts:
             x_test = np.load(root + organism_name + '/profiles/' + str(i) + '/X_' + context_test + '_' + mode + '_' + organism_name + '.npy', allow_pickle=True)
             y_test = np.load(root + organism_name + '/profiles/' + str(i) + '/Y_' + context_test + '_' + mode + '_' + organism_name + '.npy', allow_pickle= True)
 
+            x_test, y_test = data_preprocess_test(x_test, y_test)
             x_train, y_train, x_val, y_val = data_preprocess(X, Y, window_size)
             print('data preprocessed')
-
+            print('x shape', x_train.shape)
             PROFILE_ROWS = x_train.shape[1]
             PROFILE_COLS = x_train.shape[2]
             block_size = (50, 20)
