@@ -54,7 +54,7 @@ for context in contexts:
             x_test = np.load(root + organism_name + '/profiles/' + str(i) + '/X_' + context_test + '_' + mode + '_' + organism_name + '.npy', allow_pickle=True)
             y_test = np.load(root + organism_name + '/profiles/' + str(i) + '/Y_' + context_test + '_' + mode + '_' + organism_name + '.npy', allow_pickle= True)
 
-            x_test, y_test = data_preprocess_test(x_test, y_test)
+            x_test, y_test = data_preprocess_test(x_test, y_test, window_size)
             x_train, y_train, x_val, y_val = data_preprocess(X, Y, window_size)
             print('data preprocessed')
             print('x shape', x_train.shape)
