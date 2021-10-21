@@ -47,37 +47,38 @@ def data_preprocess_test(X, Y, window_size):
 res = []
 for context in contexts:
     for i in range(1, 2):
-        for context_test in contexts:
-            X = np.load(root + organism_name + '/profiles/' + str(i) + '/X_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle=True)
-            Y = np.load(root + organism_name + '/profiles/' + str(i) + '/Y_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle= True)
+        X = np.load(root + organism_name + '/profiles/' + str(i) + '/X_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle=True)
+        Y = np.load(root + organism_name + '/profiles/' + str(i) + '/Y_' + context + '_' + mode + '_' + organism_name + '.npy', allow_pickle= True)
 
+
+        x_train, y_train, x_val, y_val = data_preprocess(X, Y, window_size)
+        print('data preprocessed')
+        print('x shape', x_train.shape)
+        PROFILE_ROWS = x_train.shape[1]
+        PROFILE_COLS = x_train.shape[2]
+        block_size = (50, 20)
+
+
+        model = Sequential()
+        model.add(Conv2D(16, kernel_size=(1, PROFILE_COLS), activation='relu', input_shape=(PROFILE_ROWS, PROFILE_COLS, 1)))
+        model.add(Reshape((block_size[0], block_size[1], 16), input_shape=(PROFILE_ROWS, 1, 16)))
+        model.add(Flatten())
+        model.add(Dense(128, activation='relu'))
+        model.add(Dropout(0.5))
+        model.add(Dense(1, activation='sigmoid'))
+
+
+        print('model processed')
+        opt = tf.keras.optimizers.SGD(lr=0.01)
+        model.compile(loss=keras.losses.binary_crossentropy, optimizer=opt, metrics=['accuracy'])
+        print('ready to fit')
+        with tf.device('/device:GPU:0'):
+            model.fit(x_train, y_train, batch_size=32, epochs=45, verbose=0, validation_data=(x_val, y_val))
+        for context_test in contexts:
             x_test = np.load(root + organism_name + '/profiles/' + str(i) + '/X_' + context_test + '_' + mode + '_' + organism_name + '.npy', allow_pickle=True)
             y_test = np.load(root + organism_name + '/profiles/' + str(i) + '/Y_' + context_test + '_' + mode + '_' + organism_name + '.npy', allow_pickle= True)
 
             x_test, y_test = data_preprocess_test(x_test, y_test, window_size)
-            x_train, y_train, x_val, y_val = data_preprocess(X, Y, window_size)
-            print('data preprocessed')
-            print('x shape', x_train.shape)
-            PROFILE_ROWS = x_train.shape[1]
-            PROFILE_COLS = x_train.shape[2]
-            block_size = (50, 20)
-
-
-            model = Sequential()
-            model.add(Conv2D(16, kernel_size=(1, PROFILE_COLS), activation='relu', input_shape=(PROFILE_ROWS, PROFILE_COLS, 1)))
-            model.add(Reshape((block_size[0], block_size[1], 16), input_shape=(PROFILE_ROWS, 1, 16)))
-            model.add(Flatten())
-            model.add(Dense(128, activation='relu'))
-            model.add(Dropout(0.5))
-            model.add(Dense(1, activation='sigmoid'))
-
-
-            print('model processed')
-            opt = tf.keras.optimizers.SGD(lr=0.01)
-            model.compile(loss=keras.losses.binary_crossentropy, optimizer=opt, metrics=['accuracy'])
-            print('ready to fit')
-            with tf.device('/device:GPU:0'):
-                model.fit(x_train, y_train, batch_size=32, epochs=45, verbose=0, validation_data=(x_val, y_val))
             y_pred = model.predict(x_test)
             context_mode = context+'-'+context_test
             step_res = [organism_name, context, 'seq-only', window_size, context_mode, str(i), accuracy_score(y_test, y_pred.round()), f1_score(y_test, y_pred.round()), precision_score(y_test, y_pred.round()), recall_score(y_test, y_pred.round())]
