@@ -16,8 +16,8 @@ for at in config['annot_types']:
     mode += at
 
 
-window_sizes = [100, 200, 400, 800, 1000]
-block_sizes = [(10, 10), (20, 10), (20, 20), (40, 20), (50, 20)]
+window_sizes = [100, 200, 400, 800, 1600, 3200]
+block_sizes = [(10, 10), (20, 10), (20, 20), (40, 20), (40, 40), (80, 40)]
 
 contexts = ['CG', 'CHG', 'CHH']
 
