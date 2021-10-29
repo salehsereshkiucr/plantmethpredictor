@@ -28,7 +28,7 @@ root = '/home/csgrads/ssere004/output_complete/'
 
 def data_preprocess(X, Y, window_size):
     X = np.delete(X, range(4, X.shape[2]), 2)
-    b = [j for j in range(int((1000-window_size)/2))] + [j for j in range(1000 - int((1000-window_size)/2), 1000)]
+    b = [j for j in range(int((3200-window_size)/2))] + [j for j in range(3200 - int((3200-window_size)/2), 3200)]
     X = np.delete(X, b, 1)
     X = X.reshape(list(X.shape) + [1])
     #X = np.swapaxes(X, 1, 2)
