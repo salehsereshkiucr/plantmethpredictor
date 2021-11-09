@@ -131,4 +131,3 @@ def data_preprocess(X, Y):
     x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=test_percent, random_state=None)
     x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=test_val_percent, random_state=None)
     return x_train, y_train, x_test, y_test, x_val, y_val
-
