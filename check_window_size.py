@@ -24,7 +24,7 @@ contexts = ['CG', 'CHG', 'CHH']
 test_percent = 0.2
 test_val_percent = 0.5
 
-root = '/home/csgrads/ssere004/output_complete/'
+root = '/home/csgrads/ssere004/'
 
 def data_preprocess(X, Y, window_size):
     X = np.delete(X, range(4, X.shape[2]), 2)
