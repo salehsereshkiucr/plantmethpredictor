@@ -44,7 +44,7 @@ def get_profiles(methylations, sample_set, sequences_onehot, annot_seqs_onehot, 
         row = methylations.iloc[position]
         center = row['position'] - 1
         chro = row['chr']
-        targets[index] = float(row['meth']) / (row['meth'] + row['unmeth'])
+        targets[index] = round(float(row['meth']) / (row['meth'] + row['unmeth']))
         try:
             profiles[index] = get_window_seqgene_df(sequences_onehot, annot_seqs_onehot, chro, center, window_size)
         except:
