@@ -102,6 +102,9 @@ def run_experiments(config_list, context_list, window_size, data_size, coverage_
             unmethylated = unmethylated[test_sample_size:]
             test_profiles, test_targets = get_profiles(methylations, test_sample_set, sequences_onehot, annot_seqs_onehot, window_size=3200)
             x_test, y_test = data_preprocess(test_profiles, test_targets)
+            np.save('./temporary_files/x_test.npy', x_test)
+            np.save('./temporary_files/y_test.npy', y_test)
+            del test_profiles, test_targets, x_test, y_test
             data_size = min(data_size, 2*len(methylated), 2*len(unmethylated))
             PROFILE_ROWS = 3200
             PROFILE_COLS = 4
@@ -116,8 +119,8 @@ def run_experiments(config_list, context_list, window_size, data_size, coverage_
             print('model processed')
             opt = tf.keras.optimizers.SGD(lr=0.01)
             model.compile(loss=keras.losses.binary_crossentropy, optimizer=opt, metrics=['accuracy'])
-            step = 100000
-            for slice in range(0, data_size, step):
+            step = 50000
+            for slice in range(0, int(data_size/2), step):
                 if step+slice > data_size:
                     break
                 sample_set = methylated[slice:slice+step]+unmethylated[slice:slice+step]
@@ -125,12 +128,15 @@ def run_experiments(config_list, context_list, window_size, data_size, coverage_
                 profiles, targets = get_profiles(methylations, sample_set, sequences_onehot, annot_seqs_onehot, window_size=3200)
                 X, Y = data_preprocess(profiles, targets)
                 x_train, x_val, y_train, y_val = split_data(X, Y, pcnt=0.1)
-                logs.append([organism_name, context, data_size, window_size, slice, me_sz, ume_sz, test_sample_size, len(sample_set), len(profiles), len(x_train), len(x_test), len(x_val)])
-                np.savetxt("logs.csv", logs, delimiter =", ", fmt='% s')
                 with tf.device('/device:GPU:0'):
                     model.fit(x_train, y_train, batch_size=32, epochs=45, verbose=0, validation_data=(x_val, y_val))
+                x_test = np.load('./temporary_files/x_test.npy')
+                y_test = np.load('./temporary_files/y_test.npy')
                 y_pred = model.predict(x_test)
+                logs.append([organism_name, context, data_size, window_size, slice, me_sz, ume_sz, test_sample_size, len(sample_set), len(profiles), len(x_train), len(x_test), len(x_val)])
+                np.savetxt("logs.csv", logs, delimiter =", ", fmt='% s')
                 step_res = [organism_name, context, 'seq-only', window_size, slice, accuracy_score(y_test, y_pred.round()), f1_score(y_test, y_pred.round()), precision_score(y_test, y_pred.round()), recall_score(y_test, y_pred.round())]
+                del x_test, y_test
                 print(step_res)
                 res.append(step_res)
                 np.savetxt("GFG.csv", res, delimiter =", ", fmt ='% s')
