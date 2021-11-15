@@ -27,7 +27,7 @@ def mkdirp(path):
 
 cnfgs = [configs.Arabidopsis_config, configs.Cowpea_config, configs.Rice_config, configs.Tomato_config, configs.Cucumber_config]
 contexts = [
-#    'CG',
+    'CG',
     'CHG',
     'CHH']
 output_root = '/home/ssere004/SalDMR/predictordataprovider/output_complete/'
