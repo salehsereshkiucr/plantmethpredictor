@@ -134,9 +134,10 @@ def run_experiments(config_list, context_list, window_size, data_size, coverage_
                 y_test = np.load('./temporary_files/y_test.npy')
                 y_pred = model.predict(x_test)
                 logs.append([organism_name, context, data_size, window_size, slice, me_sz, ume_sz,
-                             test_sample_size, len(sample_set), len(profiles), len(x_train), len(x_test), len(x_val), x_train.dytpe])
+                             test_sample_size, len(sample_set), len(profiles), len(x_train), len(x_test), len(x_val), x_train.dtype])
                 np.savetxt("logs.csv", logs, delimiter=", ", fmt='% s')
-                step_res = [organism_name, context, 'seq-only', window_size, slice, accuracy_score(y_test, y_pred.round()), f1_score(y_test, y_pred.round()), precision_score(y_test, y_pred.round()), recall_score(y_test, y_pred.round())]
+                step_res = [organism_name, context, 'seq-only', window_size, slice, accuracy_score(y_test, y_pred.round()),
+                            f1_score(y_test, y_pred.round()), precision_score(y_test, y_pred.round()), recall_score(y_test, y_pred.round())]
                 del x_test, y_test
                 print(step_res)
                 res.append(step_res)
