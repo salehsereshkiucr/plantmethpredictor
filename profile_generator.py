@@ -37,7 +37,7 @@ def get_profiles(methylations, sample_set, sequences_onehot, annot_seqs_onehot, 
     boundary_cytosines = 0
     profiles = np.zeros([len(sample_set), window_size, 4 + 2*len(annot_seqs_onehot)], dtype='short')
     targets = np.zeros(len(sample_set), dtype='short')
-    total = len(methylations)
+    total = len(sample_set)
     count = 0
     start = datetime.datetime.now()
     for index, position in enumerate(sample_set):
@@ -96,18 +96,18 @@ def run_experiments(config_list, context_list, window_size, data_size, coverage_
             me_sz = len(methylated)
             ume_sz = len(unmethylated)
             # if it is too large take 100,000. if it is small take the 10 percent of the methylated and unmethylated
-            test_sample_size = int(min(100000, len(methylated)/10, len(unmethylated)/10))
+            test_sample_size = int(min(50000, len(methylated)/10, len(unmethylated)/10))
             test_sample_set = methylated[:test_sample_size]+unmethylated[:test_sample_size]
             methylated = methylated[test_sample_size:]
             unmethylated = unmethylated[test_sample_size:]
             test_profiles, test_targets = get_profiles(methylations, test_sample_set, sequences_onehot, annot_seqs_onehot, window_size=3200)
             x_test, y_test = data_preprocess(test_profiles, test_targets, include_annot=True)
+            PROFILE_ROWS = x_test.shape[1]
+            PROFILE_COLS = x_test.shape[2]
             np.save('./temporary_files/x_test.npy', x_test)
             np.save('./temporary_files/y_test.npy', y_test)
             del test_profiles, test_targets, x_test, y_test
             data_size = min(data_size, 2*len(methylated), 2*len(unmethylated))
-            PROFILE_ROWS = 3200
-            PROFILE_COLS = 7
             block_size = (80, 40)
             model = Sequential()
             model.add(Conv2D(16, kernel_size=(1, PROFILE_COLS), activation='relu', input_shape=(PROFILE_ROWS, PROFILE_COLS, 1)))
@@ -136,7 +136,7 @@ def run_experiments(config_list, context_list, window_size, data_size, coverage_
                 logs.append([organism_name, context, data_size, window_size, slice, me_sz, ume_sz,
                              test_sample_size, len(sample_set), len(profiles), len(x_train), len(x_test), len(x_val), x_train.dtype])
                 np.savetxt("logs.csv", logs, delimiter=", ", fmt='% s')
-                step_res = [organism_name, context, 'seq-only', window_size, slice, accuracy_score(y_test, y_pred.round()),
+                step_res = [organism_name, context, 'seq-annot', window_size, slice, accuracy_score(y_test, y_pred.round()),
                             f1_score(y_test, y_pred.round()), precision_score(y_test, y_pred.round()), recall_score(y_test, y_pred.round())]
                 del x_test, y_test
                 print(step_res)
@@ -153,3 +153,18 @@ def data_preprocess(X, Y, include_annot=False):
 def split_data(X, Y, pcnt=0.1):
     x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=pcnt, random_state=None)
     return x_train, x_test, y_train, y_test
+
+
+model = Sequential()
+model.add(Conv2D(16, kernel_size=(1, PROFILE_COLS), activation='relu', input_shape=(PROFILE_ROWS, PROFILE_COLS, 1)))
+model.add(Reshape((block_size[0], block_size[1], 16), input_shape=(PROFILE_ROWS, 1, 16)))
+model.add(Flatten())
+model.add(Dense(128, activation='relu'))
+model.add(Dropout(0.5))
+model.add(Dense(1, activation='sigmoid'))
+print('model processed')
+opt = tf.keras.optimizers.SGD(lr=0.01)
+model.compile(loss=keras.losses.binary_crossentropy, optimizer=opt, metrics=['accuracy'])
+
+with tf.device('/device:GPU:0'):
+    model.fit(x_train, y_train, batch_size=32, epochs=45, verbose=0, validation_data=(x_val, y_val))
