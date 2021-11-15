@@ -107,7 +107,7 @@ def run_experiments(config_list, context_list, window_size, data_size, coverage_
             del test_profiles, test_targets, x_test, y_test
             data_size = min(data_size, 2*len(methylated), 2*len(unmethylated))
             PROFILE_ROWS = 3200
-            PROFILE_COLS = 4
+            PROFILE_COLS = 7
             block_size = (80, 40)
             model = Sequential()
             model.add(Conv2D(16, kernel_size=(1, PROFILE_COLS), activation='relu', input_shape=(PROFILE_ROWS, PROFILE_COLS, 1)))
