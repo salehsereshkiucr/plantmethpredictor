@@ -85,12 +85,22 @@ def get_processed_data(cnfg):
 
 def run_experiments(config_list, context_list, window_size, data_size, coverage_threshold=10):
     res = []
+    logs = []
     for cnfg in config_list:
         organism_name = cnfg['organism_name']
         sequences_onehot, methylations, annot_seqs_onehot = get_processed_data(cnfg)
         for context in context_list:
             #two shuffle list of the positions of the methylated and unmethylated cytosines in methylations is generated.
             methylated, unmethylated = preprocess.methylations_subseter(methylations, context, window_size, coverage_threshold)
+            me_sz = len(methylated)
+            ume_sz = len(unmethylated)
+            # if it is too large take 100,000. if it is small take the 10 percent of the methylated and unmethylated
+            test_sample_size = int(min(100000, len(methylated)/10, len(unmethylated)/10))
+            test_sample_set = methylated[:test_sample_size]+unmethylated[:test_sample_size]
+            methylated = methylated[test_sample_size:]
+            unmethylated = unmethylated[test_sample_size:]
+            test_profiles, test_targets = get_profiles(methylations, test_sample_set, sequences_onehot, annot_seqs_onehot, window_size=3200)
+            x_test, y_test = data_preprocess(test_profiles, test_targets)
             data_size = min(data_size, 2*len(methylated), 2*len(unmethylated))
             PROFILE_ROWS = 3200
             PROFILE_COLS = 4
@@ -107,10 +117,15 @@ def run_experiments(config_list, context_list, window_size, data_size, coverage_
             model.compile(loss=keras.losses.binary_crossentropy, optimizer=opt, metrics=['accuracy'])
             step = 100000
             for slice in range(0, data_size, step):
+                if step+slice > data_size:
+                    break
                 sample_set = methylated[slice:slice+step]+unmethylated[slice:slice+step]
                 random.shuffle(sample_set)
                 profiles, targets = get_profiles(methylations, sample_set, sequences_onehot, annot_seqs_onehot, window_size=3200)
-                x_train, y_train, x_test, y_test, x_val, y_val = data_preprocess(profiles, targets)
+                X, Y = data_preprocess(profiles, targets)
+                x_train, x_val, y_train, y_val = split_data(X, Y, pcnt=0.1)
+                logs.append([organism_name, context, data_size, window_size, slice, me_sz, ume_sz, len(sample_set), len(profiles), len(x_train), len(x_test), len(x_val)])
+                np.savetxt("logs.csv", logs, delimiter =", ", fmt='% s')
                 with tf.device('/device:GPU:0'):
                     model.fit(x_train, y_train, batch_size=32, epochs=45, verbose=0, validation_data=(x_val, y_val))
                 y_pred = model.predict(x_test)
@@ -119,15 +134,12 @@ def run_experiments(config_list, context_list, window_size, data_size, coverage_
                 res.append(step_res)
                 np.savetxt("GFG.csv", res, delimiter =", ", fmt ='% s')
 
-
-
-test_percent = 0.2
-test_val_percent = 0.5
-
 def data_preprocess(X, Y):
     X = np.delete(X, range(4, X.shape[2]), 2)
     X = X.reshape(list(X.shape) + [1])
     Y = np.asarray(pd.cut(Y, bins=2, labels=[0, 1], right=False))
-    x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=test_percent, random_state=None)
-    x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=test_val_percent, random_state=None)
-    return x_train, y_train, x_test, y_test, x_val, y_val
+    return X, Y
+
+def split_data(X, Y, pcnt=0.1):
+    x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=pcnt, random_state=None)
+    return x_train, x_test, y_train, y_test
