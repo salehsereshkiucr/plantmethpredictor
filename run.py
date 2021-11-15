@@ -2,7 +2,7 @@ import configs as configs
 import profile_generator as pg
 config_list = [configs.Arabidopsis_config]
 context_list = [
-    #'CG',
+    'CG',
     'CHG',
     'CHH']
 window_size = 3200

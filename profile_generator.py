@@ -101,7 +101,7 @@ def run_experiments(config_list, context_list, window_size, data_size, coverage_
             methylated = methylated[test_sample_size:]
             unmethylated = unmethylated[test_sample_size:]
             test_profiles, test_targets = get_profiles(methylations, test_sample_set, sequences_onehot, annot_seqs_onehot, window_size=3200)
-            x_test, y_test = data_preprocess(test_profiles, test_targets)
+            x_test, y_test = data_preprocess(test_profiles, test_targets, include_annot=True)
             np.save('./temporary_files/x_test.npy', x_test)
             np.save('./temporary_files/y_test.npy', y_test)
             del test_profiles, test_targets, x_test, y_test
@@ -126,7 +126,7 @@ def run_experiments(config_list, context_list, window_size, data_size, coverage_
                 sample_set = methylated[slice:slice+step]+unmethylated[slice:slice+step]
                 random.shuffle(sample_set)
                 profiles, targets = get_profiles(methylations, sample_set, sequences_onehot, annot_seqs_onehot, window_size=3200)
-                X, Y = data_preprocess(profiles, targets)
+                X, Y = data_preprocess(profiles, targets, include_annot=True)
                 x_train, x_val, y_train, y_val = split_data(X, Y, pcnt=0.1)
                 with tf.device('/device:GPU:0'):
                     model.fit(x_train, y_train, batch_size=32, epochs=45, verbose=0, validation_data=(x_val, y_val))
@@ -143,8 +143,9 @@ def run_experiments(config_list, context_list, window_size, data_size, coverage_
                 res.append(step_res)
                 np.savetxt("GFG.csv", res, delimiter =", ", fmt ='% s')
 
-def data_preprocess(X, Y):
-    X = np.delete(X, range(4, X.shape[2]), 2)
+def data_preprocess(X, Y, include_annot=False):
+    if not include_annot:
+        X = np.delete(X, range(4, X.shape[2]), 2)
     X = X.reshape(list(X.shape) + [1])
     Y = np.asarray(pd.cut(Y, bins=2, labels=[0, 1], right=False))
     return X, Y
