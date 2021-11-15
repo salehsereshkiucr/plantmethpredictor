@@ -86,7 +86,7 @@ def get_processed_data(cnfg):
 def run_experiments(config_list, context_list, window_size, data_size, coverage_threshold=10):
     res = []
     logs = []
-    logs.append(['organism_name', 'context', 'data_size', 'window_size', 'slice', 'me_sz', 'ume_sz', 'test_sample_size', 'sample_set', 'profiles', 'x_train', 'x_test', 'x_val'])
+    logs.append(['organism_name', 'context', 'data_size', 'window_size', 'slice', 'me_sz', 'ume_sz', 'test_sample_size', 'sample_set', 'profiles', 'x_train', 'x_test', 'x_val', 'dtype'])
     for cnfg in config_list:
         organism_name = cnfg['organism_name']
         sequences_onehot, methylations, annot_seqs_onehot = get_processed_data(cnfg)
@@ -133,8 +133,9 @@ def run_experiments(config_list, context_list, window_size, data_size, coverage_
                 x_test = np.load('./temporary_files/x_test.npy')
                 y_test = np.load('./temporary_files/y_test.npy')
                 y_pred = model.predict(x_test)
-                logs.append([organism_name, context, data_size, window_size, slice, me_sz, ume_sz, test_sample_size, len(sample_set), len(profiles), len(x_train), len(x_test), len(x_val)])
-                np.savetxt("logs.csv", logs, delimiter =", ", fmt='% s')
+                logs.append([organism_name, context, data_size, window_size, slice, me_sz, ume_sz,
+                             test_sample_size, len(sample_set), len(profiles), len(x_train), len(x_test), len(x_val), x_train.dytpe])
+                np.savetxt("logs.csv", logs, delimiter=", ", fmt='% s')
                 step_res = [organism_name, context, 'seq-only', window_size, slice, accuracy_score(y_test, y_pred.round()), f1_score(y_test, y_pred.round()), precision_score(y_test, y_pred.round()), recall_score(y_test, y_pred.round())]
                 del x_test, y_test
                 print(step_res)
