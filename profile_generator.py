@@ -154,17 +154,3 @@ def split_data(X, Y, pcnt=0.1):
     x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=pcnt, random_state=None)
     return x_train, x_test, y_train, y_test
 
-
-model = Sequential()
-model.add(Conv2D(16, kernel_size=(1, PROFILE_COLS), activation='relu', input_shape=(PROFILE_ROWS, PROFILE_COLS, 1)))
-model.add(Reshape((block_size[0], block_size[1], 16), input_shape=(PROFILE_ROWS, 1, 16)))
-model.add(Flatten())
-model.add(Dense(128, activation='relu'))
-model.add(Dropout(0.5))
-model.add(Dense(1, activation='sigmoid'))
-print('model processed')
-opt = tf.keras.optimizers.SGD(lr=0.01)
-model.compile(loss=keras.losses.binary_crossentropy, optimizer=opt, metrics=['accuracy'])
-
-with tf.device('/device:GPU:0'):
-    model.fit(x_train, y_train, batch_size=32, epochs=45, verbose=0, validation_data=(x_val, y_val))
