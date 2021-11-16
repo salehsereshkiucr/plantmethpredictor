@@ -119,7 +119,7 @@ def run_experiments(config_list, context_list, window_size,block_size, data_size
             print('model processed')
             opt = tf.keras.optimizers.SGD(lr=0.01)
             model.compile(loss=keras.losses.binary_crossentropy, optimizer=opt, metrics=['accuracy'])
-            step = 10000
+            step = 20000
             x_train_sz = 0
             for slice in range(0, int(data_size/2), step):
                 if step+slice > data_size:
