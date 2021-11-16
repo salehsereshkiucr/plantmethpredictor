@@ -96,7 +96,7 @@ def run_experiments(config_list, context_list, window_size,block_size, data_size
             me_sz = len(methylated)
             ume_sz = len(unmethylated)
             # if it is too large take 100,000. if it is small take the 10 percent of the methylated and unmethylated
-            test_sample_size = int(min(50000, len(methylated)/10, len(unmethylated)/10))
+            test_sample_size = int(min(10000, len(methylated)/10, len(unmethylated)/10))
             test_sample_set = methylated[:test_sample_size]+unmethylated[:test_sample_size]
             methylated = methylated[test_sample_size:]
             unmethylated = unmethylated[test_sample_size:]
