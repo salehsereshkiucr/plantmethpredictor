@@ -29,7 +29,6 @@ def run_experiment(organism_name, context, i, root):
     x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=test_val_percent, random_state=None)
 
     W_maxnorm = 3
-
     model = Sequential()
     model.add(Conv2D(128, kernel_size=(1, 5), activation='relu', input_shape=(PROFILE_COLS, PROFILE_ROWS, 1), padding='same', kernel_constraint=max_norm(W_maxnorm)))
     model.add(MaxPooling2D(pool_size=(1, 5), strides=(1, 3)))
