@@ -101,7 +101,7 @@ def run_experiments(config_list, context_list, window_size,block_size, data_size
             methylated = methylated[test_sample_size:]
             unmethylated = unmethylated[test_sample_size:]
             test_profiles, test_targets = get_profiles(methylations, test_sample_set, sequences_onehot, annot_seqs_onehot, window_size=window_size)
-            x_test, y_test = data_preprocess(test_profiles, test_targets, include_annot=False)
+            x_test, y_test = data_preprocess(test_profiles, test_targets, include_annot=True)
             PROFILE_ROWS = x_test.shape[1]
             PROFILE_COLS = x_test.shape[2]
             x_test_sz = len(x_test)
@@ -127,7 +127,7 @@ def run_experiments(config_list, context_list, window_size,block_size, data_size
                 sample_set = methylated[slice:slice+step]+unmethylated[slice:slice+step]
                 random.shuffle(sample_set)
                 profiles, targets = get_profiles(methylations, sample_set, sequences_onehot, annot_seqs_onehot, window_size=window_size)
-                X, Y = data_preprocess(profiles, targets, include_annot=False)
+                X, Y = data_preprocess(profiles, targets, include_annot=True)
                 x_train, x_val, y_train, y_val = split_data(X, Y, pcnt=0.1)
                 x_train_sz += len(x_train)
                 with tf.device('/device:GPU:0'):
