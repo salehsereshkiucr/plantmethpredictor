@@ -3,6 +3,7 @@ import constants as constants
 import pickle
 from os import path
 import random
+import pandas as pd
 
 def subset_annot(annot_df, type):
     genes_df = annot_df[annot_df['type'] == type]
@@ -112,6 +113,21 @@ def methylations_sampler(methylated_size, unmethylated_size):
     else:
         shuffled_um = shuffled_um[:len(shuffled_m)]
     return shuffled_m, shuffled_um
+
+def seperate_methylations(organism_name, methylations, ratio = 0.1, from_file=True):
+    if from_file:
+        methylations_train = pd.read_csv('./dump_files/'+organism_name+'_methylations_train.csv', header=0)
+        methylations_test = pd.read_csv('./dump_files/'+organism_name+'_methylations_test.csv', header=0)
+        return methylations_train, methylations_test
+    idxs = np.random.permutation(len(methylations))
+    splitter = int(len(methylations)*ratio)
+    methylations_train = methylations.loc[idxs[0:splitter]]
+    methylations_train = methylations_train.reset_index(drop=True)
+    methylations_test = methylations.loc[idxs[splitter:len(methylations)*0.9]]
+    methylations_test = methylations_test.reset_index(drop=True)
+    methylations_train.to_csv('./dump_files/'+organism_name+'_methylations_train.csv', header=True, index=False)
+    methylations_test.to_csv('./dump_files/'+organism_name+'_methylations_test.csv', header=True, index=False)
+    return methylations_train, methylations_test
 
 
 
