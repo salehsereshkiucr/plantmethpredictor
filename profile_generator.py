@@ -99,6 +99,7 @@ def test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, context
 def run_experiments(config_list, context_list, window_size, block_size, data_size, steps, coverage_threshold=10, include_annot=True):
     res = []
     logs = []
+    print(config_list, context_list, window_size, block_size, data_size, steps, coverage_threshold, include_annot)
     logs.append(['organism_name', 'context', 'data_size', 'window_size', 'slice', 'me_sz', 'ume_sz', 'test_sample_size', 'sample_set', 'profiles', 'x_train', 'x_test', 'x_val', 'dtype'])
     for cnfg in config_list:
         organism_name = cnfg['organism_name']
@@ -121,7 +122,7 @@ def run_experiments(config_list, context_list, window_size, block_size, data_siz
             methylated_train, unmethylated_train = preprocess.methylations_subseter(methylations_train, context, window_size, coverage_threshold)
             data_size = min(data_size, 2*len(methylated_train), 2*len(unmethylated_train))
             x_train_sz = 0
-            for s in len(steps-1):
+            for s in range(len(steps) - 1):
                 step = steps[s+1] - steps[s]
                 slice = steps[s]
                 if step+slice > data_size:
