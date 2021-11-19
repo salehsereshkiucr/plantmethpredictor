@@ -108,7 +108,7 @@ def run_experiments(config_list, context_list, window_size, block_size, data_siz
             PROFILE_ROWS = window_size
             PROFILE_COLS = 4
             if include_annot:
-                PROFILE_COLS = 4 + len(annot_seqs_onehot)
+                PROFILE_COLS = 4 + 2*len(annot_seqs_onehot)
             model = Sequential()
             model.add(Conv2D(16, kernel_size=(1, PROFILE_COLS), activation='relu', input_shape=(PROFILE_ROWS, PROFILE_COLS, 1)))
             model.add(Reshape((block_size[0], block_size[1], 16), input_shape=(PROFILE_ROWS, 1, 16)))
