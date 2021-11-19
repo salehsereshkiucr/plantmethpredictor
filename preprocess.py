@@ -114,7 +114,7 @@ def methylations_sampler(methylated_size, unmethylated_size):
         shuffled_um = shuffled_um[:len(shuffled_m)]
     return shuffled_m, shuffled_um
 
-def seperate_methylations(organism_name, methylations, ratio = 0.1, from_file=True):
+def seperate_methylations(organism_name, methylations, test_ratio = 0.1, from_file=True):
     fn_train = './dump_files/'+organism_name+'_methylations_train.csv'
     fn_test = './dump_files/'+organism_name+'_methylations_test.csv'
     if from_file and path.exists(fn_test) and path.exists(fn_train):
@@ -122,10 +122,10 @@ def seperate_methylations(organism_name, methylations, ratio = 0.1, from_file=Tr
         methylations_test = pd.read_csv('./dump_files/'+organism_name+'_methylations_test.csv', header=0)
         return methylations_train, methylations_test
     idxs = np.random.permutation(len(methylations))
-    splitter = int(len(methylations)*ratio)
+    splitter = int(len(methylations)*(1-test_ratio))
     methylations_train = methylations.loc[idxs[0:splitter]]
     methylations_train = methylations_train.reset_index(drop=True)
-    methylations_test = methylations.loc[idxs[splitter:len(methylations)*0.9]]
+    methylations_test = methylations.loc[idxs[splitter:len(methylations)]]
     methylations_test = methylations_test.reset_index(drop=True)
     methylations_train.to_csv('./dump_files/'+organism_name+'_methylations_train.csv', header=True, index=False)
     methylations_test.to_csv('./dump_files/'+organism_name+'_methylations_test.csv', header=True, index=False)
