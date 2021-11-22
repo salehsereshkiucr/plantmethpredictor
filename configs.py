@@ -9,6 +9,9 @@ Arabidopsis_config = {
 }
 
 Cowpea_config = {
+    'methylation_address': root + 'Cowpea/2010_1_bismark_bt2_pe.CX_report.txt',
+    'seq_address': root + 'Cowpea/Cowpea_Genome_1.0.fasta',
+    'annot_address': root + 'Cowpea/Vunguiculata_540_v1.2.gene.gff3',
     'organism_name': 'Cowpea',
     'annot_types': ['gene', 'CDS']
 
@@ -23,11 +26,17 @@ Rice_config = {
 }
 
 Tomato_config = {
+    'methylation_address': root + 'Tomato/SRR503393_output_forward_paired_bismark_bt2_pe.CX_report.txt',
+    'seq_address': root + 'Tomato/GCF_000188115.4_SL3.0_genomic.fa',
+    'annot_address': root + 'Tomato/GCF_000188115.4_SL3.0_genomic.gff',
     'organism_name': 'Tomato',
     'annot_types': ['gene', 'exon', 'CDS']
 }
 
 Cucumber_config = {
+    'methylation_address': root + 'Cucumber/SRR5430777_1_bismark_bt2_pe.CX_report.txt',
+    'seq_address': root + 'Cucumber/GCF_000004075.3_Cucumber_9930_V3_genomic.fa',
+    'annot_address': root + 'Cucumber/GCF_000004075.3_Cucumber_9930_V3_genomic.gff',
     'organism_name': 'Cucumber',
     'annot_types': ['gene', 'exon', 'CDS']
 }
