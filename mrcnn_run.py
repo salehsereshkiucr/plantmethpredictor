@@ -69,5 +69,10 @@ def run_experiment_mrcnn(config_list, context_list, window_size, block_size, dat
             res.append(step_res)
             np.savetxt("GFG_mrcnn.csv", res, delimiter=", ", fmt='% s')
 
-
-run_experiment_mrcnn([configs.Arabidopsis_config], ['CG', 'CHG', 'CHH'], 1600, (40, 40), 600000, coverage_threshold=10, include_annot=False)
+window_size = 1600
+data_size = 600000
+block_size = (40, 40)
+contexts = ['CG', 'CHG', 'CHH']
+coverage_threshold = 10
+include_annot = False
+run_experiment_mrcnn([configs.Arabidopsis_config], contexts, window_size, block_size, data_size, coverage_threshold=10, include_annot=False)
