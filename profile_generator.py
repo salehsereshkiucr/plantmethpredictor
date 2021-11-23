@@ -161,6 +161,7 @@ def data_preprocess(X, Y, include_annot=False):
     Y = np.asarray(pd.cut(Y, bins=2, labels=[0, 1], right=False))
     return X, Y
 
+
 def split_data(X, Y, pcnt=0.1):
     x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=pcnt, random_state=None)
     return x_train, x_test, y_train, y_test
