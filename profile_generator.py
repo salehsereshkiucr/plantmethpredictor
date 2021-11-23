@@ -88,7 +88,7 @@ def get_processed_data(cnfg):
 
 def test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, context, window_size, coverage_threshold, include_annot=False):
     methylated, unmethylated = preprocess.methylations_subseter(methylations_test, context, window_size, coverage_threshold)
-    test_sample_size = int(min(10000, len(methylated)/10, len(unmethylated)/10))
+    test_sample_size = int(min(100000, len(methylated)/10, len(unmethylated)/10))
     test_sample_set = methylated[:test_sample_size]+unmethylated[:test_sample_size]
     test_profiles, test_targets = get_profiles(methylations_test, test_sample_set, sequences_onehot, annot_seqs_onehot, window_size=window_size)
     x_test, y_test = data_preprocess(test_profiles, test_targets, include_annot=include_annot)
@@ -104,6 +104,8 @@ def run_experiments(config_list, context_list, window_size, block_size, data_siz
     for cnfg in config_list:
         organism_name = cnfg['organism_name']
         sequences_onehot, methylations_train, methylations_test, annot_seqs_onehot = get_processed_data(cnfg)
+        print('train methylations size', 'test methylations size')
+        print(len(methylations_train), len(methylations_test))
         for context in context_list:
             PROFILE_ROWS = window_size
             PROFILE_COLS = 4
