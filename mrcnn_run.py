@@ -11,7 +11,7 @@ from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Resh
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score, precision_score, recall_score
 
 
-def run_experiment_mrcnn(config_list, context_list, window_size, block_size, data_size, coverage_threshold=10, include_annot=True):
+def run_experiment_mrcnn(config_list, context_list, window_size, block_size, data_size, steps, coverage_threshold=10, include_annot=True):
     res = []
     for cnfg in config_list:
         organism_name = cnfg['organism_name']
@@ -36,22 +36,26 @@ def run_experiment_mrcnn(config_list, context_list, window_size, block_size, dat
             model.add(Activation('softmax'))
             myoptimizer = keras.optimizers.Adam(lr=0.001)
             model.compile(loss='mse', optimizer=myoptimizer, metrics=['accuracy'])
-
             methylated_train, unmethylated_train = preprocess.methylations_subseter(methylations_train, context, window_size, coverage_threshold)
             data_size = min(data_size, 2*len(methylated_train), 2*len(unmethylated_train))
-            step = 20000
-            slice = 0
-            sample_set = methylated_train[slice:slice+step]+unmethylated_train[slice:slice+step]
-            random.shuffle(sample_set)
-            profiles, targets = pg.get_profiles(methylations_train, sample_set, sequences_onehot, annot_seqs_onehot, window_size=window_size)
-            X, Y = pg.data_preprocess(profiles, targets, include_annot=include_annot)
-            b = np.zeros((Y.size, Y.max()+1))
-            b[np.arange(Y.size), Y] = 1
-            Y = b
-            X = np.swapaxes(X, 1, 2)
-            x_train, x_val, y_train, y_val = pg.split_data(X, Y, pcnt=0.1)
-            with tf.device('/device:GPU:0'):
-                model.fit(x_train, y_train, batch_size=32, epochs=45, verbose=0, validation_data=(x_val, y_val))
+            x_train_sz = 0
+            for s in range(len(steps) - 1):
+                step = steps[s+1] - steps[s]
+                slice = int(steps[s]/2)
+                if step+slice > data_size:
+                    break
+                sample_set = methylated_train[slice:slice+int(step/2)]+unmethylated_train[slice:slice+int(step/2)]
+                random.shuffle(sample_set)
+                profiles, targets = pg.get_profiles(methylations_train, sample_set, sequences_onehot, annot_seqs_onehot, window_size=window_size)
+                X, Y = pg.data_preprocess(profiles, targets, include_annot=include_annot)
+                b = np.zeros((Y.size, Y.max()+1))
+                b[np.arange(Y.size), Y] = 1
+                Y = b
+                X = np.swapaxes(X, 1, 2)
+                x_train, x_val, y_train, y_val = pg.split_data(X, Y, pcnt=0.1)
+                x_train_sz += len(x_train)
+                with tf.device('/device:GPU:0'):
+                    model.fit(x_train, y_train, batch_size=32, epochs=45, verbose=0, validation_data=(x_val, y_val))
             x_test, y_test = pg.test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, context, window_size, coverage_threshold, include_annot=include_annot)
             x_test = np.swapaxes(x_test, 1, 2)
             b = np.zeros((y_test.size, y_test.max()+1))
@@ -63,7 +67,7 @@ def run_experiment_mrcnn(config_list, context_list, window_size, block_size, dat
             annot_mode = 'seq-only'
             if include_annot:
                 annot_mode='seq-annot'
-            step_res = [organism_name, context, annot_mode, window_size, len(x_test), accuracy_score(y_test, y_pred.round()),
+            step_res = [organism_name, context, annot_mode, window_size, x_train_sz, len(x_test), accuracy_score(y_test, y_pred.round()),
                                     f1_score(y_test, y_pred.round()), precision_score(y_test, y_pred.round()), recall_score(y_test, y_pred.round())]
             print(step_res)
             res.append(step_res)
@@ -75,4 +79,5 @@ block_size = (40, 40)
 contexts = ['CG', 'CHG', 'CHH']
 coverage_threshold = 10
 include_annot = False
-run_experiment_mrcnn([configs.Arabidopsis_config], contexts, window_size, block_size, data_size, coverage_threshold=10, include_annot=False)
+run_experiment_mrcnn([configs.Arabidopsis_config], contexts, window_size, block_size, data_size, [0, 100000, 200000, 300000, 400000, 500000], coverage_threshold=10, include_annot=False)
+

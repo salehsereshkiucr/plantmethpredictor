@@ -126,10 +126,10 @@ def run_experiments(config_list, context_list, window_size, block_size, data_siz
             x_train_sz = 0
             for s in range(len(steps) - 1):
                 step = steps[s+1] - steps[s]
-                slice = steps[s]
+                slice = int(steps[s]/2)
                 if step+slice > data_size:
                     break
-                sample_set = methylated_train[slice:slice+step]+unmethylated_train[slice:slice+step]
+                sample_set = methylated_train[slice:slice+int(step/2)]+unmethylated_train[slice:slice+int(step/2)]
                 random.shuffle(sample_set)
                 profiles, targets = get_profiles(methylations_train, sample_set, sequences_onehot, annot_seqs_onehot, window_size=window_size)
                 X, Y = data_preprocess(profiles, targets, include_annot=include_annot)
@@ -146,7 +146,7 @@ def run_experiments(config_list, context_list, window_size, block_size, data_siz
                 tag = 'seq-only'
                 if include_annot:
                     tag = 'seq-annot'
-                step_res = [organism_name, context, tag, window_size, x_train_sz, len(x_test), accuracy_score(y_test, y_pred.round()),
+                step_res = [organism_name, context, tag, window_size, x_train_sz, len(x_train), len(x_test), accuracy_score(y_test, y_pred.round()),
                         f1_score(y_test, y_pred.round()), precision_score(y_test, y_pred.round()), recall_score(y_test, y_pred.round())]
                 del x_test, y_test
                 print(step_res)
@@ -160,7 +160,6 @@ def data_preprocess(X, Y, include_annot=False):
     X = X.reshape(list(X.shape) + [1])
     Y = np.asarray(pd.cut(Y, bins=2, labels=[0, 1], right=False))
     return X, Y
-
 
 def split_data(X, Y, pcnt=0.1):
     x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=pcnt, random_state=None)
