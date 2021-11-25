@@ -90,7 +90,7 @@ def test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, context
     methylated, unmethylated = preprocess.methylations_subseter(methylations_test, context, window_size, coverage_threshold)
     test_sample_size = int(min(50000, 2*len(methylated), 2*len(unmethylated)))
     test_sample_set = methylated[:test_sample_size]+unmethylated[:test_sample_size]
-    test_sample_set.shuffle()
+    random.shuffle(test_sample_set)
     test_profiles, test_targets = get_profiles(methylations_test, test_sample_set, sequences_onehot, annot_seqs_onehot, window_size=window_size)
     x_test, y_test = data_preprocess(test_profiles, test_targets, include_annot=include_annot)
     return x_test, y_test
