@@ -88,15 +88,16 @@ def get_processed_data(cnfg):
 
 def test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, context, window_size, coverage_threshold, include_annot=False):
     methylated, unmethylated = preprocess.methylations_subseter(methylations_test, context, window_size, coverage_threshold)
-    test_sample_size = int(min(100000, 2*len(methylated), 2*len(unmethylated)))
+    test_sample_size = int(min(50000, 2*len(methylated), 2*len(unmethylated)))
     test_sample_set = methylated[:test_sample_size]+unmethylated[:test_sample_size]
+    test_sample_set.shuffle()
     test_profiles, test_targets = get_profiles(methylations_test, test_sample_set, sequences_onehot, annot_seqs_onehot, window_size=window_size)
     x_test, y_test = data_preprocess(test_profiles, test_targets, include_annot=include_annot)
     return x_test, y_test
 
 
 
-def run_experiments(config_list, context_list, window_size, block_size, data_size, steps, coverage_threshold=10, include_annot=True):
+def run_experiments(config_list, context_list, window_size, block_size, data_size, steps, coverage_threshold=10, include_annot=True, memory_chunk_size=10000):
     res = []
     logs = []
     print(config_list, context_list, window_size, block_size, data_size, steps, coverage_threshold, include_annot)
@@ -127,16 +128,17 @@ def run_experiments(config_list, context_list, window_size, block_size, data_siz
             for s in range(len(steps) - 1):
                 step = steps[s+1] - steps[s]
                 slice = int(steps[s]/2)
-                if step+slice > data_size:
+                if step+slice > data_size/2:
                     break
-                sample_set = methylated_train[slice:slice+int(step/2)]+unmethylated_train[slice:slice+int(step/2)]
-                random.shuffle(sample_set)
-                profiles, targets = get_profiles(methylations_train, sample_set, sequences_onehot, annot_seqs_onehot, window_size=window_size)
-                X, Y = data_preprocess(profiles, targets, include_annot=include_annot)
-                x_train, x_val, y_train, y_val = split_data(X, Y, pcnt=0.1)
-                x_train_sz += len(x_train)
-                with tf.device('/device:GPU:0'):
-                    model.fit(x_train, y_train, batch_size=32, epochs=45, verbose=0, validation_data=(x_val, y_val))
+                for chunk in range(slice, slice+int(step/2), memory_chunk_size):
+                    sample_set = methylated_train[chunk:chunk+memory_chunk_size]+unmethylated_train[chunk:chunk+memory_chunk_size]
+                    random.shuffle(sample_set)
+                    profiles, targets = get_profiles(methylations_train, sample_set, sequences_onehot, annot_seqs_onehot, window_size=window_size)
+                    X, Y = data_preprocess(profiles, targets, include_annot=include_annot)
+                    x_train, x_val, y_train, y_val = split_data(X, Y, pcnt=0.1)
+                    x_train_sz += len(x_train)
+                    with tf.device('/device:GPU:0'):
+                        model.fit(x_train, y_train, batch_size=32, epochs=45, verbose=0, validation_data=(x_val, y_val))
 
                 x_test, y_test = test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, context, window_size, coverage_threshold, include_annot=include_annot)
                 y_pred = model.predict(x_test)
