@@ -97,10 +97,10 @@ def test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, context
 
 
 
-def run_experiments(config_list, context_list, window_size, block_size, data_size, steps, coverage_threshold=10, include_annot=True, memory_chunk_size=10000):
+def run_experiments(config_list, context_list, window_sizes, block_sizes, data_size, steps, coverage_threshold=10, include_annot=True, memory_chunk_size=10000):
     res = []
     logs = []
-    print(config_list, context_list, window_size, block_size, data_size, steps, coverage_threshold, include_annot)
+    print(config_list, context_list, window_sizes, block_sizes, data_size, steps, coverage_threshold, include_annot)
     logs.append(['organism_name', 'context', 'data_size', 'window_size', 'slice', 'me_sz', 'ume_sz', 'test_sample_size', 'sample_set', 'profiles', 'x_train', 'x_test', 'x_val', 'dtype'])
     for cnfg in config_list:
         organism_name = cnfg['organism_name']
@@ -108,52 +108,53 @@ def run_experiments(config_list, context_list, window_size, block_size, data_siz
         print('train methylations size', 'test methylations size')
         print(len(methylations_train), len(methylations_test))
         for context in context_list:
-            PROFILE_ROWS = window_size
-            PROFILE_COLS = 4
-            if include_annot:
-                PROFILE_COLS = 4 + 2*len(annot_seqs_onehot)
-            model = Sequential()
-            model.add(Conv2D(16, kernel_size=(1, PROFILE_COLS), activation='relu', input_shape=(PROFILE_ROWS, PROFILE_COLS, 1)))
-            model.add(Reshape((block_size[0], block_size[1], 16), input_shape=(PROFILE_ROWS, 1, 16)))
-            model.add(Flatten())
-            model.add(Dense(128, activation='relu'))
-            model.add(Dropout(0.5))
-            model.add(Dense(1, activation='sigmoid'))
-            print('model processed')
-            opt = tf.keras.optimizers.SGD(lr=0.01)
-            model.compile(loss=keras.losses.binary_crossentropy, optimizer=opt, metrics=['accuracy'])
-            methylated_train, unmethylated_train = preprocess.methylations_subseter(methylations_train, context, window_size, coverage_threshold)
-            data_size = min(data_size, 2*len(methylated_train), 2*len(unmethylated_train))
-            x_train_sz = 0
-            for s in range(len(steps) - 1):
-                step = steps[s+1] - steps[s]
-                slice = int(steps[s]/2)
-                if step+slice > data_size/2:
-                    break
-                for chunk in range(slice, slice+int(step/2), memory_chunk_size):
-                    sample_set = methylated_train[chunk:chunk+memory_chunk_size]+unmethylated_train[chunk:chunk+memory_chunk_size]
-                    random.shuffle(sample_set)
-                    profiles, targets = get_profiles(methylations_train, sample_set, sequences_onehot, annot_seqs_onehot, window_size=window_size)
-                    X, Y = data_preprocess(profiles, targets, include_annot=include_annot)
-                    x_train, x_val, y_train, y_val = split_data(X, Y, pcnt=0.1)
-                    x_train_sz += len(x_train)
-                    with tf.device('/device:GPU:0'):
-                        model.fit(x_train, y_train, batch_size=32, epochs=45, verbose=0, validation_data=(x_val, y_val))
-
-                x_test, y_test = test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, context, window_size, coverage_threshold, include_annot=include_annot)
-                y_pred = model.predict(x_test)
-                #logs.append([organism_name, context, data_size, window_size, slice, me_sz, ume_sz,
-                #         test_sample_size, len(sample_set), len(profiles), len(x_train), x_test_sz, len(x_val), x_train.dtype])
-                #np.savetxt("logs.csv", logs, delimiter=", ", fmt='% s')
-                tag = 'seq-only'
+            for w in range(len(window_sizes)):
+                PROFILE_ROWS = window_sizes[w]
+                PROFILE_COLS = 4
                 if include_annot:
-                    tag = 'seq-annot'
-                step_res = [organism_name, context, tag, window_size, x_train_sz, len(x_train), len(x_test), accuracy_score(y_test, y_pred.round()),
-                        f1_score(y_test, y_pred.round()), precision_score(y_test, y_pred.round()), recall_score(y_test, y_pred.round())]
-                del x_test, y_test
-                print(step_res)
-                res.append(step_res)
-                np.savetxt("GFG.csv", res, delimiter =", ", fmt ='% s')
+                    PROFILE_COLS = 4 + 2*len(annot_seqs_onehot)
+                model = Sequential()
+                model.add(Conv2D(16, kernel_size=(1, PROFILE_COLS), activation='relu', input_shape=(PROFILE_ROWS, PROFILE_COLS, 1)))
+                model.add(Reshape((block_sizes[w][0], block_sizes[w][1], 16), input_shape=(PROFILE_ROWS, 1, 16)))
+                model.add(Flatten())
+                model.add(Dense(128, activation='relu'))
+                model.add(Dropout(0.5))
+                model.add(Dense(1, activation='sigmoid'))
+                print('model processed')
+                opt = tf.keras.optimizers.SGD(lr=0.01)
+                model.compile(loss=keras.losses.binary_crossentropy, optimizer=opt, metrics=['accuracy'])
+                methylated_train, unmethylated_train = preprocess.methylations_subseter(methylations_train, context, window_sizes[w], coverage_threshold)
+                data_size = min(data_size, 2*len(methylated_train), 2*len(unmethylated_train))
+                x_train_sz = 0
+                for s in range(len(steps) - 1):
+                    step = steps[s+1] - steps[s]
+                    slice = int(steps[s]/2)
+                    if step+slice > data_size/2:
+                        break
+                    for chunk in range(slice, slice+int(step/2), memory_chunk_size):
+                        sample_set = methylated_train[chunk:chunk+memory_chunk_size]+unmethylated_train[chunk:chunk+memory_chunk_size]
+                        random.shuffle(sample_set)
+                        profiles, targets = get_profiles(methylations_train, sample_set, sequences_onehot, annot_seqs_onehot, window_size=window_sizes[w])
+                        X, Y = data_preprocess(profiles, targets, include_annot=include_annot)
+                        x_train, x_val, y_train, y_val = split_data(X, Y, pcnt=0.1)
+                        x_train_sz += len(x_train)
+                        with tf.device('/device:GPU:0'):
+                            model.fit(x_train, y_train, batch_size=32, epochs=45, verbose=0, validation_data=(x_val, y_val))
+
+                    x_test, y_test = test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, context, window_sizes[w], coverage_threshold, include_annot=include_annot)
+                    y_pred = model.predict(x_test)
+                    #logs.append([organism_name, context, data_size, window_size, slice, me_sz, ume_sz,
+                    #         test_sample_size, len(sample_set), len(profiles), len(x_train), x_test_sz, len(x_val), x_train.dtype])
+                    #np.savetxt("logs.csv", logs, delimiter=", ", fmt='% s')
+                    tag = 'seq-only'
+                    if include_annot:
+                        tag = 'seq-annot'
+                    step_res = [organism_name, context, tag, window_sizes[w], x_train_sz, len(x_train), len(x_test), accuracy_score(y_test, y_pred.round()),
+                            f1_score(y_test, y_pred.round()), precision_score(y_test, y_pred.round()), recall_score(y_test, y_pred.round())]
+                    del x_test, y_test
+                    print(step_res)
+                    res.append(step_res)
+                    np.savetxt("GFG.csv", res, delimiter =", ", fmt ='% s')
     return res
 
 def data_preprocess(X, Y, include_annot=False):
