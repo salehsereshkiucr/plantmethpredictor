@@ -129,7 +129,7 @@ def run_experiments(config_list, context_list, window_sizes, block_sizes, data_s
                 for s in range(len(steps) - 1):
                     step = steps[s+1] - steps[s]
                     slice = int(steps[s]/2)
-                    if step+slice > data_size/2:
+                    if step+slice > data_size:
                         break
                     for chunk in range(slice, slice+int(step/2), memory_chunk_size):
                         sample_set = methylated_train[chunk:chunk+memory_chunk_size]+unmethylated_train[chunk:chunk+memory_chunk_size]

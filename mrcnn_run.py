@@ -42,7 +42,7 @@ def run_experiment_mrcnn(config_list, context_list, window_size, block_size, dat
             for s in range(len(steps) - 1):
                 step = steps[s+1] - steps[s]
                 slice = int(steps[s]/2)
-                if step+slice > data_size/2:
+                if step+slice > data_size:
                     break
                 sample_set = methylated_train[slice:slice+int(step/2)]+unmethylated_train[slice:slice+int(step/2)]
                 random.shuffle(sample_set)
