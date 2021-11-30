@@ -9,7 +9,7 @@ context_list = [
     'CHG',
     'CHH']
 window_size = 3200
-data_size = 600000
+data_size = 100000
 window_sizes = [
     100,
     200,
@@ -22,4 +22,13 @@ block_sizes = [(10, 10), (20, 10), (20, 20), (40, 20), (40, 40), (80, 40)]
 final_res = []
 #res = pg.run_experiments(config_list, context_list, 3200, (80, 40), data_size, coverage_threshold=10)
 
-res = pg.run_experiments(config_list, context_list, window_sizes, block_sizes, data_size, [0, 500000], coverage_threshold=10, include_annot=True)
+res = pg.run_experiments(config_list, context_list, [3200], [(80, 40)], data_size, [0, 400000, 600000, 800000, 1000000], coverage_threshold=10, include_annot=False)
+np.savetxt("GFG1.csv", res, delimiter =", ", fmt ='% s')
+res = pg.run_experiments(config_list, context_list, [3200], [(80, 40)], data_size, [0, 400000, 600000, 800000, 1000000], coverage_threshold=10, include_annot=True)
+np.savetxt("GFG2.csv", res, delimiter =", ", fmt ='% s')
+
+
+res = pg.run_experiments([configs.Arabidopsis_config], context_list, [3200], [(80, 40)], data_size, [0, 40000, 80000, 120000, 200000, 400000, 600000, 800000, 1000000], coverage_threshold=10, include_annot=False)
+np.savetxt("GFG3.csv", res, delimiter =", ", fmt ='% s')
+res = pg.run_experiments([configs.Arabidopsis_config], context_list, [3200], [(80, 40)], data_size, [0, 40000, 80000, 120000, 200000, 400000, 600000, 800000, 1000000], coverage_threshold=10, include_annot=True)
+np.savetxt("GFG4.csv", res, delimiter =", ", fmt ='% s')
