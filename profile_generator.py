@@ -97,11 +97,8 @@ def test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, context
 
 
 
-def run_experiments(config_list, context_list, window_sizes, block_sizes, data_size, steps, coverage_threshold=10, include_annot=True, memory_chunk_size=10000):
+def run_experiments(config_list, context_list, window_sizes, block_sizes, steps, coverage_threshold=10, include_annot=True, memory_chunk_size=10000):
     res = []
-    logs = []
-    print(config_list, context_list, window_sizes, block_sizes, data_size, steps, coverage_threshold, include_annot)
-    logs.append(['organism_name', 'context', 'data_size', 'window_size', 'slice', 'me_sz', 'ume_sz', 'test_sample_size', 'sample_set', 'profiles', 'x_train', 'x_test', 'x_val', 'dtype'])
     for cnfg in config_list:
         organism_name = cnfg['organism_name']
         sequences_onehot, methylations_train, methylations_test, annot_seqs_onehot = get_processed_data(cnfg)
@@ -124,13 +121,10 @@ def run_experiments(config_list, context_list, window_sizes, block_sizes, data_s
                 opt = tf.keras.optimizers.SGD(lr=0.01)
                 model.compile(loss=keras.losses.binary_crossentropy, optimizer=opt, metrics=['accuracy'])
                 methylated_train, unmethylated_train = preprocess.methylations_subseter(methylations_train, context, window_sizes[w], coverage_threshold)
-                data_size = min(data_size, 2*len(methylated_train), 2*len(unmethylated_train))
                 x_train_sz = 0
                 for s in range(len(steps) - 1):
                     step = steps[s+1] - steps[s]
                     slice = int(steps[s]/2)
-                    if step+slice > data_size:
-                        break
                     for chunk in range(slice, slice+int(step/2), memory_chunk_size):
                         sample_set = methylated_train[chunk:chunk+memory_chunk_size]+unmethylated_train[chunk:chunk+memory_chunk_size]
                         random.shuffle(sample_set)
@@ -143,9 +137,6 @@ def run_experiments(config_list, context_list, window_sizes, block_sizes, data_s
 
                     x_test, y_test = test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, context, window_sizes[w], coverage_threshold, include_annot=include_annot)
                     y_pred = model.predict(x_test)
-                    #logs.append([organism_name, context, data_size, window_size, slice, me_sz, ume_sz,
-                    #         test_sample_size, len(sample_set), len(profiles), len(x_train), x_test_sz, len(x_val), x_train.dtype])
-                    #np.savetxt("logs.csv", logs, delimiter=", ", fmt='% s')
                     tag = 'seq-only'
                     if include_annot:
                         tag = 'seq-annot'
