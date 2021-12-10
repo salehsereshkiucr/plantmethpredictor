@@ -65,7 +65,7 @@ def get_window_seqgene_df(sequences_df, annot_seq_df_list, chro, center, window_
         profile_df = np.concatenate([profile_df, annot_seq_df_list[i][chro][center - int(window_size/2): center + int(window_size/2)]], axis=1)
     return profile_df
 
-def get_processed_data(cnfg, context, coverage_threshold=10, methylations_from_file=True, annotseqs_from_file=True, sequneces_df_from_file=True):
+def get_processed_data(cnfg, context, coverage_threshold=10, methylations_from_file=False, annotseqs_from_file=True, sequneces_df_from_file=True):
     organism_name = cnfg['organism_name']
     methylations = data_reader.read_methylations(cnfg['methylation_address'], context, coverage_threshold=coverage_threshold)
     methylations, num_to_chr_dic = preprocess.shrink_methylation(methylations)

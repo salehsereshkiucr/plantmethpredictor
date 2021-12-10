@@ -124,7 +124,7 @@ def convert_assembely_to_onehot(organism_name, sequences, from_file=False):
 def methylations_subseter(methylations, window_size):
     methylations['m_idx'] = range(len(methylations))
     methylations_subset = methylations[methylations['position'] > window_size * 10]
-    methylated = methylations_subset[methylations_subset['mlevel']> 0.5]
+    methylated = methylations_subset[methylations_subset['mlevel'] > 0.5]
     methylated = methylated.reset_index(drop=True)
     unmethylated = methylations_subset[methylations_subset['mlevel'] < 0.5]
     unmethylated = unmethylated.reset_index(drop=True)
