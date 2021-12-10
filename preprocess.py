@@ -40,15 +40,9 @@ def shrink_methylation(methylations):
     positions_ndarray = np.asarray(methylations['position'])
     mlevels_ndarray = np.asarray(methylations['meth']/(methylations['meth']+methylations['unmeth']))
     chr_to_num_dic = {}
-    count = 0
-    for chr in methylations['chr'].unique():
-        if count % 100 == 0:
-            print(count)
-        chr_to_num_dic[chr] = count
-        count += 1
     unique_chrs, unique_indices, chr_ndarray = np.unique(chr_ndarray, return_inverse=True, return_index=True)
     for i in range(len(unique_chrs)):
-        chr_to_num_dic[unique_indices[i]] = unique_chrs[i]
+        chr_to_num_dic[chr_ndarray[unique_indices[i]]] = unique_chrs[i]
     chr_ndarray = chr_ndarray.astype('short')
     methylations = pd.DataFrame({'chr': chr_ndarray, 'position': positions_ndarray, 'mlevel': mlevels_ndarray})
     methylations['chr'] = methylations['chr'].astype(int)
