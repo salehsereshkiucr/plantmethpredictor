@@ -38,6 +38,6 @@ final_res = []
 #np.savetxt("GFG6.csv", res, delimiter =", ", fmt ='% s')
 
 res = pg.run_experiments([configs.Tomato_config], context_list, [3200], [(80, 40)], [0, 40000, 80000, 120000, 200000, 400000, 600000, 800000, 1000000], coverage_threshold=10, include_annot=False)
-np.savetxt("GFG7.csv", res, delimiter =", ", fmt ='% s')
+np.savetxt("GFG7.csv", res, delimiter=", ", fmt='% s')
 res = pg.run_experiments([configs.Tomato_config], context_list, [3200], [(80, 40)], [0, 40000, 80000, 120000, 200000, 400000, 600000, 800000, 1000000], coverage_threshold=10, include_annot=True)
-np.savetxt("GFG8.csv", res, delimiter =", ", fmt ='% s')
+np.savetxt("GFG8.csv", res, delimiter=",", fmt='% s')

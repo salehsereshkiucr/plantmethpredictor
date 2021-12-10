@@ -33,7 +33,7 @@ contexts = [
 output_root = '/home/ssere004/SalDMR/predictordataprovider/output_complete/'
 
 #This method gets for an organism and context, mekes
-def get_profiles(methylations, sample_set, sequences_onehot, annot_seqs_onehot, window_size=3200):
+def get_profiles(methylations, sample_set, sequences_onehot, annot_seqs_onehot, num_to_chr_dic, window_size=3200):
     boundary_cytosines = 0
     profiles = np.zeros([len(sample_set), window_size, 4 + 2*len(annot_seqs_onehot)], dtype='short')
     targets = np.zeros(len(sample_set), dtype='short')
@@ -43,8 +43,8 @@ def get_profiles(methylations, sample_set, sequences_onehot, annot_seqs_onehot, 
     for index, position in enumerate(sample_set):
         row = methylations.iloc[position]
         center = row['position'] - 1
-        chro = row['chr']
-        targets[index] = round(float(row['meth']) / (row['meth'] + row['unmeth']))
+        chro = num_to_chr_dic[row['chr']]
+        targets[index] = round(float(row['mlevel']))
         try:
             profiles[index] = get_window_seqgene_df(sequences_onehot, annot_seqs_onehot, chro, center, window_size)
         except:
@@ -58,17 +58,19 @@ def get_profiles(methylations, sample_set, sequences_onehot, annot_seqs_onehot, 
     return profiles, targets
 
 
+
 def get_window_seqgene_df(sequences_df, annot_seq_df_list, chro, center, window_size):
     profile_df = sequences_df[chro][center - int(window_size/2): center + int(window_size/2)]
     for i in range(len(annot_seq_df_list)):
         profile_df = np.concatenate([profile_df, annot_seq_df_list[i][chro][center - int(window_size/2): center + int(window_size/2)]], axis=1)
     return profile_df
 
-def get_processed_data(cnfg):
+def get_processed_data(cnfg, context, coverage_threshold=10, methylations_from_file=True, annotseqs_from_file=True, sequneces_df_from_file=True):
     organism_name = cnfg['organism_name']
-    methylations = data_reader.read_methylations(cnfg['methylation_address'])
-    methylations_train, methylations_test = preprocess.seperate_methylations(organism_name, methylations, from_file=True)
-    sequences = data_reader.readfasta(cnfg['seq_address'])
+    methylations = data_reader.read_methylations(cnfg['methylation_address'], context, coverage_threshold=coverage_threshold)
+    methylations, num_to_chr_dic = preprocess.shrink_methylation(methylations)
+    methylations_train, methylations_test = preprocess.seperate_methylations(organism_name, methylations, from_file=methylations_from_file)
+    sequences = data_reader.readfasta(cnfg['seq_address']) #Can get shrinked the size.
     annot_df = data_reader.read_annot(cnfg['annot_address'])
     if organism_name == configs.Cowpea_config['organism_name']:
         sequences = compatibility.cowpea_sequence_dic_key_compatibility(sequences)
@@ -79,19 +81,19 @@ def get_processed_data(cnfg):
     annot_tag = ''
     for at in cnfg['annot_types']:
         annot_subset = preprocess.subset_annot(annot_df, at)
-        annot_str = preprocess.make_annotseq_dic(organism_name, at, annot_subset, sequences, from_file=True)
+        annot_str = preprocess.make_annotseq_dic(organism_name, at, annot_subset, sequences, from_file=annotseqs_from_file)
         annot_seq_df_list.append(annot_str)
         annot_tag += at
-    sequences_df = preprocess.convert_assembely_to_onehot(organism_name, sequences, from_file=True)
-    return sequences_df,  methylations_train, methylations_test, annot_seq_df_list
+    sequences_df = preprocess.convert_assembely_to_onehot(organism_name, sequences, from_file=sequneces_df_from_file)
+    return sequences_df, methylations_train, methylations_test, annot_seq_df_list, num_to_chr_dic
 
 
-def test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, context, window_size, coverage_threshold, include_annot=False):
-    methylated, unmethylated = preprocess.methylations_subseter(methylations_test, context, window_size, coverage_threshold)
+def test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, window_size, num_to_chr_dic, include_annot=False):
+    methylated, unmethylated = preprocess.methylations_subseter(methylations_test, window_size)
     test_sample_size = int(min(50000, 2*len(methylated), 2*len(unmethylated)))
     test_sample_set = methylated[:test_sample_size]+unmethylated[:test_sample_size]
     random.shuffle(test_sample_set)
-    test_profiles, test_targets = get_profiles(methylations_test, test_sample_set, sequences_onehot, annot_seqs_onehot, window_size=window_size)
+    test_profiles, test_targets = get_profiles(methylations_test, test_sample_set, sequences_onehot, annot_seqs_onehot, num_to_chr_dic, window_size=window_size)
     x_test, y_test = data_preprocess(test_profiles, test_targets, include_annot=include_annot)
     return x_test, y_test
 
@@ -101,10 +103,8 @@ def run_experiments(config_list, context_list, window_sizes, block_sizes, steps,
     res = []
     for cnfg in config_list:
         organism_name = cnfg['organism_name']
-        sequences_onehot, methylations_train, methylations_test, annot_seqs_onehot = get_processed_data(cnfg)
-        print('train methylations size', 'test methylations size')
-        print(len(methylations_train), len(methylations_test))
         for context in context_list:
+            sequences_onehot, methylations_train, methylations_test, annot_seqs_onehot, num_to_chr_dic = get_processed_data(cnfg, context, coverage_threshold=coverage_threshold)
             for w in range(len(window_sizes)):
                 PROFILE_ROWS = window_sizes[w]
                 PROFILE_COLS = 4
@@ -120,7 +120,7 @@ def run_experiments(config_list, context_list, window_sizes, block_sizes, steps,
                 print('model processed')
                 opt = tf.keras.optimizers.SGD(lr=0.01)
                 model.compile(loss=keras.losses.binary_crossentropy, optimizer=opt, metrics=['accuracy'])
-                methylated_train, unmethylated_train = preprocess.methylations_subseter(methylations_train, context, window_sizes[w], coverage_threshold)
+                methylated_train, unmethylated_train = preprocess.methylations_subseter(methylations_train, window_sizes[w])
                 x_train_sz = 0
                 for s in range(len(steps) - 1):
                     step = steps[s+1] - steps[s]
@@ -128,14 +128,14 @@ def run_experiments(config_list, context_list, window_sizes, block_sizes, steps,
                     for chunk in range(slice, slice+int(step/2), memory_chunk_size):
                         sample_set = methylated_train[chunk:chunk+memory_chunk_size]+unmethylated_train[chunk:chunk+memory_chunk_size]
                         random.shuffle(sample_set)
-                        profiles, targets = get_profiles(methylations_train, sample_set, sequences_onehot, annot_seqs_onehot, window_size=window_sizes[w])
+                        profiles, targets = get_profiles(methylations_train, sample_set, sequences_onehot, annot_seqs_onehot, num_to_chr_dic, window_size=window_sizes[w])
                         X, Y = data_preprocess(profiles, targets, include_annot=include_annot)
                         x_train, x_val, y_train, y_val = split_data(X, Y, pcnt=0.1)
                         x_train_sz += len(x_train)
                         with tf.device('/device:GPU:0'):
                             model.fit(x_train, y_train, batch_size=32, epochs=45, verbose=0, validation_data=(x_val, y_val))
 
-                    x_test, y_test = test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, context, window_sizes[w], coverage_threshold, include_annot=include_annot)
+                    x_test, y_test = test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, window_sizes[w], coverage_threshold, num_to_chr_dic, include_annot=include_annot)
                     y_pred = model.predict(x_test)
                     tag = 'seq-only'
                     if include_annot:

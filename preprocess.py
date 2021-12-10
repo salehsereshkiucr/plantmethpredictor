@@ -35,6 +35,41 @@ def make_annotseq_dic(organism_name, annot_tag, annot_subset_df, sequences, from
     save_dic(fn, annot_seqs)
     return annot_seqs
 
+def shrink_methylation(methylations):
+    chr_ndarray = np.asarray(methylations['chr'])
+    positions_ndarray = np.asarray(methylations['position'])
+    mlevels_ndarray = np.asarray(methylations['meth']/(methylations['meth']+methylations['unmeth']))
+    chr_to_num_dic = {}
+    count = 0
+    for chr in methylations['chr'].unique():
+        if count % 100 == 0:
+            print(count)
+        chr_to_num_dic[chr] = count
+        count += 1
+    unique_chrs, unique_indices, chr_ndarray = np.unique(chr_ndarray, return_inverse=True, return_index=True)
+    for i in range(len(unique_chrs)):
+        chr_to_num_dic[unique_indices[i]] = unique_chrs[i]
+    chr_ndarray = chr_ndarray.astype('short')
+    methylations = pd.DataFrame({'chr': chr_ndarray, 'position': positions_ndarray, 'mlevel': mlevels_ndarray})
+    return methylations, chr_to_num_dic
+
+
+
+def replace_values_nparray(np_array, chro_to_num_dic):
+    from_values = list(chro_to_num_dic.keys())
+    to_values = []
+    for k in from_values:
+        to_values.append(chro_to_num_dic[k])
+    sort_idx = np.argsort(from_values)
+    idx = np.searchsorted(from_values, np_array,sorter= sort_idx)
+    out = to_values[sort_idx][idx]
+    return out
+
+def replace_values_nparray(np_array, chro_to_num_dic):
+    out = [chro_to_num_dic[i] for i in np_array]
+    return out
+
+
 def make_meth_string(organism_name, methylations, sequences, coverage_thrshld, from_file = False):
     fn = './dump_files/' + organism_name + '_meth_seq.pkl'
     if from_file and path.exists(fn):
@@ -46,7 +81,7 @@ def make_meth_string(organism_name, methylations, sequences, coverage_thrshld, f
 
     methylations.loc[(methylations.mlevel == 0), 'mlevel'] = constants.NON_METH_TAG
     methylations.loc[(methylations.coverage < coverage_thrshld), 'mlevel'] = 0
-    methylations.loc[(methylations.strand == '-'),'mlevel'] = -1 * methylations.mlevel
+    #methylations.loc[(methylations.strand == '-'),'mlevel'] = -1 * methylations.mlevel
 
     meth_seq = {}
     for chr in sequences.keys():
@@ -86,15 +121,12 @@ def convert_assembely_to_onehot(organism_name, sequences, from_file=False):
     return one_hots
 
 
-def methylations_subseter(methylations, context, window_size, coverage_threshold):
+def methylations_subseter(methylations, window_size):
     methylations['m_idx'] = range(len(methylations))
-    methylations_subset = methylations[methylations['context'] == context]
-    methylations_subset = methylations_subset[methylations_subset['position'] > window_size * 10]
-    methylations_subset = methylations_subset[methylations_subset['meth'] + methylations_subset['unmeth'] > coverage_threshold]
-    methylations_subset = methylations_subset.reset_index(drop=True)
-    methylated = methylations_subset[methylations_subset['meth']/(methylations_subset['meth'] + methylations_subset['unmeth']) > 0.5]
+    methylations_subset = methylations[methylations['position'] > window_size * 10]
+    methylated = methylations_subset[methylations_subset['mlevel']> 0.5]
     methylated = methylated.reset_index(drop=True)
-    unmethylated = methylations_subset[methylations_subset['meth']/(methylations_subset['meth'] + methylations_subset['unmeth']) < 0.5]
+    unmethylated = methylations_subset[methylations_subset['mlevel'] < 0.5]
     unmethylated = unmethylated.reset_index(drop=True)
     methylated = list(methylated['m_idx'])
     random.shuffle(methylated)
