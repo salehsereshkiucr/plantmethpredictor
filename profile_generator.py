@@ -135,7 +135,8 @@ def run_experiments(config_list, context_list, window_sizes, block_sizes, steps,
                         with tf.device('/device:GPU:0'):
                             model.fit(x_train, y_train, batch_size=32, epochs=45, verbose=0, validation_data=(x_val, y_val))
 
-                    x_test, y_test = test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, window_sizes[w], coverage_threshold, num_to_chr_dic, include_annot=include_annot)
+                    x_test, y_test = test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, window_sizes[w], num_to_chr_dic, include_annot=include_annot)
+
                     y_pred = model.predict(x_test)
                     tag = 'seq-only'
                     if include_annot:
