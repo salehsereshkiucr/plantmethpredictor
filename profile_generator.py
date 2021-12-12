@@ -42,7 +42,7 @@ def get_profiles(methylations, sample_set, sequences_onehot, annot_seqs_onehot, 
     start = datetime.datetime.now()
     for index, position in enumerate(sample_set):
         row = methylations.iloc[position]
-        center = row['position'] - 1
+        center = int(row['position'] - 1)
         chro = num_to_chr_dic[row['chr']]
         targets[index] = round(float(row['mlevel']))
         try:
