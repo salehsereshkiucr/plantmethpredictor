@@ -119,11 +119,11 @@ def run_experiments(config_list, context_list, window_sizes, block_sizes, steps,
                 opt = tf.keras.optimizers.SGD(lr=0.01)
                 model.compile(loss=keras.losses.binary_crossentropy, optimizer=opt, metrics=['accuracy'])
                 methylated_train, unmethylated_train = preprocess.methylations_subseter(methylations_train, window_sizes[w])
-                ds_size = min(methylated_train, unmethylated_train)
+                ds_size = min(len(methylated_train), len(unmethylated_train))
                 x_train_sz = 0
                 for s in range(len(steps) - 1):
                     step = steps[s+1] - steps[s]
-                    print('##################################',step)
+                    print('##################################', step)
                     print('#################################', ds_size)
                     if ds_size * 2 < step: #temporary, does not work for dataset size checking.
                         step = ds_size * 2
