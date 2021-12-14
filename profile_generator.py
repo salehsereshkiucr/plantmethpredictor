@@ -97,7 +97,6 @@ def test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, window_
     return x_test, y_test
 
 
-
 def run_experiments(config_list, context_list, window_sizes, block_sizes, steps, coverage_threshold=10, include_annot=True, memory_chunk_size=10000):
     res = []
     for cnfg in config_list:
@@ -124,6 +123,8 @@ def run_experiments(config_list, context_list, window_sizes, block_sizes, steps,
                 x_train_sz = 0
                 for s in range(len(steps) - 1):
                     step = steps[s+1] - steps[s]
+                    print('##################################',step)
+                    print('#################################', ds_size)
                     if ds_size * 2 < step: #temporary, does not work for dataset size checking.
                         step = ds_size * 2
                     slice = int(steps[s]/2)
