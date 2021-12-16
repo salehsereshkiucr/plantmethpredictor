@@ -140,7 +140,9 @@ def run_experiments(config_list, context_list, window_sizes, block_sizes, steps,
                         x_train, x_val, y_train, y_val = split_data(X, Y, pcnt=0.1)
                         x_train_sz += len(x_train)
                         with tf.device('/device:GPU:0'):
+                            print('model fitting started .... ')
                             model.fit(x_train, y_train, batch_size=32, epochs=45, verbose=0, validation_data=(x_val, y_val))
+                            print('model fitting ended for ' + str(len(x_train)) + ' data')
 
                     x_test, y_test = test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, window_sizes[w], num_to_chr_dic, include_annot=include_annot)
 
