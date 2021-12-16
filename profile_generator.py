@@ -121,12 +121,16 @@ def run_experiments(config_list, context_list, window_sizes, block_sizes, steps,
                 methylated_train, unmethylated_train = preprocess.methylations_subseter(methylations_train, window_sizes[w])
                 ds_size = min(len(methylated_train), len(unmethylated_train))
                 x_train_sz = 0
+                last = False
                 for s in range(len(steps) - 1):
+                    if last:
+                        break
                     step = steps[s+1] - steps[s]
                     print('##################################', step)
                     print('#################################', ds_size)
-                    if ds_size * 2 < step: #temporary, does not work for dataset size checking.
+                    if ds_size * 2 < steps[s+1]: #temporary, does not work for dataset size checking.
                         step = ds_size * 2
+                        last = True
                     slice = int(steps[s]/2)
                     for chunk in range(slice, slice+int(step/2), memory_chunk_size):
                         sample_set = methylated_train[chunk:chunk+memory_chunk_size]+unmethylated_train[chunk:chunk+memory_chunk_size]

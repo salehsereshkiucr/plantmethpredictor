@@ -20,11 +20,11 @@ window_sizes = [
 block_sizes = [(10, 10), (20, 10), (20, 20), (40, 20), (40, 40), (80, 40)]
 final_res = []
 
+steps = [0, 40000, 80000, 120000, 200000, 400000, 600000, 800000, 1000000]
 
-res = pg.run_experiments([configs.Cowpea_config], context_list, window_sizes, block_sizes, [0, 500000], coverage_threshold=10, include_annot=False)
-np.savetxt("GFG1.csv", res, delimiter=", ", fmt='% s')
-res = pg.run_experiments([configs.Cucumber_config], context_list, window_sizes, block_sizes, [0, 500000], coverage_threshold=10, include_annot=False)
-np.savetxt("GFG2.csv", res, delimiter=", ", fmt='% s')
-res = pg.run_experiments([configs.Tomato_config], context_list, window_sizes, block_sizes, [0, 500000], coverage_threshold=10, include_annot=False)
-np.savetxt("GFG3.csv", res, delimiter=", ", fmt='% s')
+for i in range(6):
+    res = pg.run_experiments([configs.Arabidopsis_config], context_list, window_sizes, block_sizes, steps, coverage_threshold=10, include_annot=False)
+    np.savetxt("GFG" + str(i) + ".csv", res, delimiter=", ", fmt='% s')
+
+
 
