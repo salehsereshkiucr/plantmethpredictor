@@ -97,7 +97,7 @@ def test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, window_
     return x_test, y_test
 
 
-def run_experiments(config_list, context_list, window_sizes, block_sizes, steps, coverage_threshold=10, include_annot=True, memory_chunk_size=10000):
+def run_experiments(config_list, context_list, window_sizes, block_sizes, steps, coverage_threshold=10, include_annot=True, memory_chunk_size=10000, cross_config=False, cnfg_test_list=None):
     res = []
     for cnfg in config_list:
         organism_name = cnfg['organism_name']
@@ -129,11 +129,14 @@ def run_experiments(config_list, context_list, window_sizes, block_sizes, steps,
                     print('##################################', step)
                     print('#################################', ds_size)
                     if ds_size * 2 < steps[s+1]: #temporary, does not work for dataset size checking.
-                        step = ds_size * 2
+                        step = (ds_size * 2) - 2
                         last = True
                     slice = int(steps[s]/2)
                     for chunk in range(slice, slice+int(step/2), memory_chunk_size):
-                        sample_set = methylated_train[chunk:chunk+memory_chunk_size]+unmethylated_train[chunk:chunk+memory_chunk_size]
+                        if chunk+memory_chunk_size > slice+int(step/2):
+                            sample_set = methylated_train[chunk:slice+int(step/2)]+unmethylated_train[chunk:slice+int(step/2)]
+                        else:
+                            sample_set = methylated_train[chunk:chunk+memory_chunk_size]+unmethylated_train[chunk:chunk+memory_chunk_size]
                         random.shuffle(sample_set)
                         profiles, targets = get_profiles(methylations_train, sample_set, sequences_onehot, annot_seqs_onehot, num_to_chr_dic, window_size=window_sizes[w])
                         X, Y = data_preprocess(profiles, targets, include_annot=include_annot)
@@ -143,19 +146,33 @@ def run_experiments(config_list, context_list, window_sizes, block_sizes, steps,
                             print('model fitting started .... ')
                             model.fit(x_train, y_train, batch_size=32, epochs=45, verbose=0, validation_data=(x_val, y_val))
                             print('model fitting ended for ' + str(len(x_train)) + ' data')
+                    if cross_config == False:
+                        x_test, y_test = test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, window_sizes[w], num_to_chr_dic, include_annot=include_annot)
+                        y_pred = model.predict(x_test)
+                        tag = 'seq-only'
+                        if include_annot:
+                            tag = 'seq-annot'
+                        step_res = [organism_name, context, tag, window_sizes[w], x_train_sz, len(x_train), len(x_test), accuracy_score(y_test, y_pred.round()),
+                                f1_score(y_test, y_pred.round()), precision_score(y_test, y_pred.round()), recall_score(y_test, y_pred.round())]
+                        del x_test, y_test
+                        print(step_res)
+                        res.append(step_res)
+                        np.savetxt("GFG.csv", res, delimiter =", ", fmt ='% s')
+                    else:
+                        for cnfg_test in cnfg_test_list:
+                            sequences_onehot_test, methylations_train_test, methylations_test_test, annot_seqs_onehot_test, num_to_chr_dic_test = get_processed_data(cnfg_test, context, coverage_threshold=coverage_threshold)
+                            x_test, y_test = test_sampler(methylations_test_test, sequences_onehot_test, annot_seqs_onehot_test, window_sizes[w], num_to_chr_dic, include_annot=include_annot)
+                            y_pred = model.predict(x_test)
+                            tag = 'seq-only'
+                            if include_annot:
+                                tag = 'seq-annot'
+                            step_res = [organism_name, context, tag, window_sizes[w], x_train_sz, len(x_train), len(x_test), accuracy_score(y_test, y_pred.round()),
+                                    f1_score(y_test, y_pred.round()), precision_score(y_test, y_pred.round()), recall_score(y_test, y_pred.round())]
+                            del x_test, y_test
+                            print(step_res)
+                            res.append(step_res)
+                            np.savetxt("GFG.csv", res, delimiter =", ", fmt ='% s')
 
-                    x_test, y_test = test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, window_sizes[w], num_to_chr_dic, include_annot=include_annot)
-
-                    y_pred = model.predict(x_test)
-                    tag = 'seq-only'
-                    if include_annot:
-                        tag = 'seq-annot'
-                    step_res = [organism_name, context, tag, window_sizes[w], x_train_sz, len(x_train), len(x_test), accuracy_score(y_test, y_pred.round()),
-                            f1_score(y_test, y_pred.round()), precision_score(y_test, y_pred.round()), recall_score(y_test, y_pred.round())]
-                    del x_test, y_test
-                    print(step_res)
-                    res.append(step_res)
-                    np.savetxt("GFG.csv", res, delimiter =", ", fmt ='% s')
     return res
 
 def data_preprocess(X, Y, include_annot=False):
