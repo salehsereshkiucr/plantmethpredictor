@@ -162,13 +162,13 @@ def run_experiments(config_list, context_list, window_sizes, block_sizes, steps,
                         for cnfg_test in cnfg_test_list:
                             sequences_onehot_test, methylations_train_test, methylations_test_test, annot_seqs_onehot_test, num_to_chr_dic_test = get_processed_data(cnfg_test, context, coverage_threshold=coverage_threshold)
                             del methylations_train_test
-                            x_test, y_test = test_sampler(methylations_test_test, sequences_onehot_test, annot_seqs_onehot_test, window_sizes[w], num_to_chr_dic, include_annot=include_annot)
+                            x_test, y_test = test_sampler(methylations_test_test, sequences_onehot_test, annot_seqs_onehot_test, window_sizes[w], num_to_chr_dic_test, include_annot=include_annot)
                             y_pred = model.predict(x_test)
                             del sequences_onehot_test, methylations_test_test, annot_seqs_onehot_test, num_to_chr_dic_test
                             tag = 'seq-only'
                             if include_annot:
                                 tag = 'seq-annot'
-                            step_res = [organism_name, context, tag, window_sizes[w], x_train_sz, len(x_train), len(x_test), accuracy_score(y_test, y_pred.round()),
+                            step_res = [organism_name, cnfg_test['organism_name'], context, tag, window_sizes[w], x_train_sz, len(x_train), len(x_test), accuracy_score(y_test, y_pred.round()),
                                     f1_score(y_test, y_pred.round()), precision_score(y_test, y_pred.round()), recall_score(y_test, y_pred.round())]
                             del x_test, y_test
                             print(step_res)
