@@ -143,7 +143,7 @@ def methylations_sampler(methylated_size, unmethylated_size):
         shuffled_um = shuffled_um[:len(shuffled_m)]
     return shuffled_m, shuffled_um
 
-def seperate_methylations(organism_name, methylations, test_ratio = 0.1, from_file=True):
+def seperate_methylations(organism_name, methylations, test_ratio = 0.1, from_file=False):
 
     fn_train = './dump_files/'+organism_name+'_methylations_train.csv'
     fn_test = './dump_files/'+organism_name+'_methylations_test.csv'

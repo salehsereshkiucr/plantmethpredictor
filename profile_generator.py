@@ -16,6 +16,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Reshape
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score, precision_score, recall_score
 import configs as configs
+from datetime import datetime
 from os import path
 
 def mkdirp(path):
@@ -55,6 +56,7 @@ def get_profiles(methylations, sample_set, sequences_onehot, annot_seqs_onehot, 
             print(str(int(count * 100/total)) + '%' + ' in ' + str(seconds) +' seconds')
         count += 1
     print(str(boundary_cytosines) + ' boundary cytosines are ignored')
+    print(datetime.now())
     return profiles, targets
 
 
@@ -65,7 +67,10 @@ def get_window_seqgene_df(sequences_df, annot_seq_df_list, chro, center, window_
         profile_df = np.concatenate([profile_df, annot_seq_df_list[i][chro][center - int(window_size/2): center + int(window_size/2)]], axis=1)
     return profile_df
 
-def get_processed_data(cnfg, context, coverage_threshold=10, methylations_from_file=False, annotseqs_from_file=True, sequneces_df_from_file=True):
+
+
+
+def get_processed_data(cnfg, context, coverage_threshold=10, annotseqs_from_file=True, sequneces_df_from_file=True):
     organism_name = cnfg['organism_name']
     methylations = data_reader.read_methylations(cnfg['methylation_address'], context, coverage_threshold=coverage_threshold)
     sequences = data_reader.readfasta(cnfg['seq_address']) #Can get shrinked the size.
@@ -75,7 +80,6 @@ def get_processed_data(cnfg, context, coverage_threshold=10, methylations_from_f
         annot_df = compatibility.cowpea_annotation_compatibility(annot_df)
         methylations = compatibility.cowpea_methylation_compatibility(methylations)
     methylations, num_to_chr_dic = preprocess.shrink_methylation(methylations)
-    methylations_train, methylations_test = preprocess.seperate_methylations(organism_name, methylations, from_file=methylations_from_file)
     annot_seq_df_list = []
     annot_tag = ''
     for at in cnfg['annot_types']:
@@ -84,7 +88,7 @@ def get_processed_data(cnfg, context, coverage_threshold=10, methylations_from_f
         annot_seq_df_list.append(annot_str)
         annot_tag += at
     sequences_df = preprocess.convert_assembely_to_onehot(organism_name, sequences, from_file=sequneces_df_from_file)
-    return sequences_df, methylations_train, methylations_test, annot_seq_df_list, num_to_chr_dic
+    return sequences_df, methylations, annot_seq_df_list, num_to_chr_dic
 
 
 def test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, window_size, num_to_chr_dic, include_annot=False):
@@ -102,12 +106,14 @@ def run_experiments(config_list, context_list, window_sizes, block_sizes, steps,
     for cnfg in config_list:
         organism_name = cnfg['organism_name']
         for context in context_list:
-            sequences_onehot, methylations_train, methylations_test, annot_seqs_onehot, num_to_chr_dic = get_processed_data(cnfg, context, coverage_threshold=coverage_threshold)
+            sequences_onehot, methylations, annot_seqs_onehot, num_to_chr_dic = get_processed_data(cnfg, context, coverage_threshold=coverage_threshold)
+            methylations_train, methylations_test = preprocess.seperate_methylations(organism_name, methylations, from_file=False)
+            if not include_annot:
+                del annot_seqs_onehot
+                annot_seqs_onehot = []
             for w in range(len(window_sizes)):
                 PROFILE_ROWS = window_sizes[w]
-                PROFILE_COLS = 4
-                if include_annot:
-                    PROFILE_COLS = 4 + 2*len(annot_seqs_onehot)
+                PROFILE_COLS = 4 + 2*len(annot_seqs_onehot)
                 model = Sequential()
                 model.add(Conv2D(16, kernel_size=(1, PROFILE_COLS), activation='relu', input_shape=(PROFILE_ROWS, PROFILE_COLS, 1)))
                 model.add(Reshape((block_sizes[w][0], block_sizes[w][1], 16), input_shape=(PROFILE_ROWS, 1, 16)))
@@ -116,6 +122,7 @@ def run_experiments(config_list, context_list, window_sizes, block_sizes, steps,
                 model.add(Dropout(0.5))
                 model.add(Dense(1, activation='sigmoid'))
                 print('model processed')
+                print(datetime.now())
                 opt = tf.keras.optimizers.SGD(lr=0.01)
                 model.compile(loss=keras.losses.binary_crossentropy, optimizer=opt, metrics=['accuracy'])
                 methylated_train, unmethylated_train = preprocess.methylations_subseter(methylations_train, window_sizes[w])
@@ -143,9 +150,12 @@ def run_experiments(config_list, context_list, window_sizes, block_sizes, steps,
                         x_train, x_val, y_train, y_val = split_data(X, Y, pcnt=0.1)
                         x_train_sz += len(x_train)
                         with tf.device('/device:GPU:0'):
-                            print('model fitting started .... ')
+                            print('model fitting started for ' + organism_name)
+                            print(datetime.now())
                             model.fit(x_train, y_train, batch_size=32, epochs=45, verbose=0, validation_data=(x_val, y_val))
                             print('model fitting ended for ' + str(len(x_train)) + ' data')
+                            print(datetime.now())
+                            del x_train, y_train
                     if cross_config == False:
                         x_test, y_test = test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, window_sizes[w], num_to_chr_dic, include_annot=include_annot)
                         y_pred = model.predict(x_test)
@@ -156,13 +166,16 @@ def run_experiments(config_list, context_list, window_sizes, block_sizes, steps,
                                 f1_score(y_test, y_pred.round()), precision_score(y_test, y_pred.round()), recall_score(y_test, y_pred.round())]
                         del x_test, y_test
                         print(step_res)
+                        print(datetime.now())
                         res.append(step_res)
                         np.savetxt("GFG.csv", res, delimiter =", ", fmt ='% s')
                     else:
                         for cnfg_test in cnfg_test_list:
-                            sequences_onehot_test, methylations_train_test, methylations_test_test, annot_seqs_onehot_test, num_to_chr_dic_test = get_processed_data(cnfg_test, context, coverage_threshold=coverage_threshold)
-                            del methylations_train_test
-                            x_test, y_test = test_sampler(methylations_test_test, sequences_onehot_test, annot_seqs_onehot_test, window_sizes[w], num_to_chr_dic_test, include_annot=include_annot)
+                            del sequences_onehot, methylations_train, methylations_test, annot_seqs_onehot, num_to_chr_dic
+
+
+                            sequences_onehot_test_config, methylations_test_config, annot_seqs_onehot_test_config, num_to_chr_dic_test_config = get_processed_data(cnfg_test, context, coverage_threshold=coverage_threshold)
+                            x_test, y_test = test_sampler(methylations_test_config, sequences_onehot_test_config, annot_seqs_onehot_test_config, window_sizes[w], num_to_chr_dic_test_config, include_annot=include_annot)
                             y_pred = model.predict(x_test)
                             del sequences_onehot_test, methylations_test_test, annot_seqs_onehot_test, num_to_chr_dic_test
                             tag = 'seq-only'
@@ -172,6 +185,7 @@ def run_experiments(config_list, context_list, window_sizes, block_sizes, steps,
                                     f1_score(y_test, y_pred.round()), precision_score(y_test, y_pred.round()), recall_score(y_test, y_pred.round())]
                             del x_test, y_test
                             print(step_res)
+                            print(datetime.now())
                             res.append(step_res)
                             np.savetxt("GFG.csv", res, delimiter =", ", fmt ='% s')
 
