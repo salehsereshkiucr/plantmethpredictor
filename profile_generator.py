@@ -5,7 +5,7 @@ import data_reader as data_reader
 import preprocess as preprocess
 import random
 import os
-import datetime
+from datetime import datetime
 import tensorflow as tf
 import numpy as np
 import pandas as pd
