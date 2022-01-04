@@ -16,7 +16,6 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Reshape
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score, precision_score, recall_score
 import configs as configs
-from datetime import datetime
 from os import path
 
 def mkdirp(path):
@@ -40,7 +39,7 @@ def get_profiles(methylations, sample_set, sequences_onehot, annot_seqs_onehot, 
     targets = np.zeros(len(sample_set), dtype='short')
     total = len(sample_set)
     count = 0
-    start = datetime.datetime.now()
+    start = datetime.now()
     for index, position in enumerate(sample_set):
         row = methylations.iloc[position]
         center = int(row['position'] - 1)
@@ -51,7 +50,7 @@ def get_profiles(methylations, sample_set, sequences_onehot, annot_seqs_onehot, 
         except:
             boundary_cytosines += 1
         if count % int(total/10) == 0:
-            now = datetime.datetime.now()
+            now = datetime.now()
             seconds = (now - start).seconds
             print(str(int(count * 100/total)) + '%' + ' in ' + str(seconds) +' seconds')
         count += 1
