@@ -100,7 +100,7 @@ def test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, window_
     return x_test, y_test
 
 
-def run_experiments(config_list, context_list, window_sizes, block_sizes, steps, coverage_threshold=10, include_annot=True, memory_chunk_size=10000, cross_config=False, cnfg_test_list=None):
+def run_experiments(config_list, context_list, window_sizes, block_sizes, steps, coverage_threshold=10, include_annot=True, memory_chunk_size=10000):
     res = []
     for cnfg in config_list:
         organism_name = cnfg['organism_name']
@@ -155,39 +155,21 @@ def run_experiments(config_list, context_list, window_sizes, block_sizes, steps,
                             print('model fitting ended for ' + str(len(x_train)) + ' data')
                             print(datetime.now())
                             del x_train, y_train
-                    if cross_config == False:
+                    model_tag = str(organism_name) + str(context) + str(x_train_sz) + str(window_sizes[w]) + '.mdl'
+                    model.save('./models/' + model_tag)
+                    if False: #this line added for cross species train test
                         x_test, y_test = test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, window_sizes[w], num_to_chr_dic, include_annot=include_annot)
                         y_pred = model.predict(x_test)
                         tag = 'seq-only'
                         if include_annot:
                             tag = 'seq-annot'
-                        step_res = [organism_name, context, tag, window_sizes[w], x_train_sz, len(x_train), len(x_test), accuracy_score(y_test, y_pred.round()),
+                        step_res = [organism_name, context, tag, window_sizes[w], x_train_sz, len(x_test), accuracy_score(y_test, y_pred.round()),
                                 f1_score(y_test, y_pred.round()), precision_score(y_test, y_pred.round()), recall_score(y_test, y_pred.round())]
                         del x_test, y_test
                         print(step_res)
                         print(datetime.now())
                         res.append(step_res)
                         np.savetxt("GFG.csv", res, delimiter =", ", fmt ='% s')
-                    else:
-                        for cnfg_test in cnfg_test_list:
-                            del sequences_onehot, methylations_train, methylations_test, annot_seqs_onehot, num_to_chr_dic
-
-
-                            sequences_onehot_test_config, methylations_test_config, annot_seqs_onehot_test_config, num_to_chr_dic_test_config = get_processed_data(cnfg_test, context, coverage_threshold=coverage_threshold)
-                            x_test, y_test = test_sampler(methylations_test_config, sequences_onehot_test_config, annot_seqs_onehot_test_config, window_sizes[w], num_to_chr_dic_test_config, include_annot=include_annot)
-                            y_pred = model.predict(x_test)
-                            del sequences_onehot_test, methylations_test_test, annot_seqs_onehot_test, num_to_chr_dic_test
-                            tag = 'seq-only'
-                            if include_annot:
-                                tag = 'seq-annot'
-                            step_res = [organism_name, cnfg_test['organism_name'], context, tag, window_sizes[w], x_train_sz, len(x_train), len(x_test), accuracy_score(y_test, y_pred.round()),
-                                    f1_score(y_test, y_pred.round()), precision_score(y_test, y_pred.round()), recall_score(y_test, y_pred.round())]
-                            del x_test, y_test
-                            print(step_res)
-                            print(datetime.now())
-                            res.append(step_res)
-                            np.savetxt("GFG.csv", res, delimiter =", ", fmt ='% s')
-
     return res
 
 def data_preprocess(X, Y, include_annot=False):

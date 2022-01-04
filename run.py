@@ -29,5 +29,5 @@ test_config_list = [configs.Arabidopsis_config, configs.Cowpea_config, configs.R
 #    np.savetxt("GFG" + str(i) + ".csv", res, delimiter=", ", fmt='% s')
 
 
-res = pg.run_experiments(train_config_list, context_list, [3200], [(80, 40)], [0, 500000], coverage_threshold=10, include_annot=False, cross_config=True, cnfg_test_list=test_config_list)
-np.savetxt("GFG" + 'cross organism' + ".csv", res, delimiter=", ", fmt='% s')
+res = pg.run_experiments(train_config_list, context_list, [3200], [(80, 40)], [0, 55555], coverage_threshold=10, include_annot=False)
+#np.savetxt("GFG" + 'cross organism' + ".csv", res, delimiter=", ", fmt='% s')
