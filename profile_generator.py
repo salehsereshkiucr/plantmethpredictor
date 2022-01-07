@@ -157,19 +157,19 @@ def run_experiments(config_list, context_list, window_sizes, block_sizes, steps,
                             del x_train, y_train
                     model_tag = str(organism_name) + str(context) + str(x_train_sz) + str(window_sizes[w]) + '.mdl'
                     model.save('./models/' + model_tag)
-                    if False: #this line added for cross species train test
-                        x_test, y_test = test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, window_sizes[w], num_to_chr_dic, include_annot=include_annot)
-                        y_pred = model.predict(x_test)
-                        tag = 'seq-only'
-                        if include_annot:
-                            tag = 'seq-annot'
-                        step_res = [organism_name, context, tag, window_sizes[w], x_train_sz, len(x_test), accuracy_score(y_test, y_pred.round()),
-                                f1_score(y_test, y_pred.round()), precision_score(y_test, y_pred.round()), recall_score(y_test, y_pred.round())]
-                        del x_test, y_test
-                        print(step_res)
-                        print(datetime.now())
-                        res.append(step_res)
-                        np.savetxt("GFG.csv", res, delimiter =", ", fmt ='% s')
+
+                    x_test, y_test = test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, window_sizes[w], num_to_chr_dic, include_annot=include_annot)
+                    y_pred = model.predict(x_test)
+                    tag = 'seq-only'
+                    if include_annot:
+                        tag = 'seq-annot'
+                    step_res = [organism_name, context, tag, window_sizes[w], x_train_sz, len(x_test), accuracy_score(y_test, y_pred.round()),
+                            f1_score(y_test, y_pred.round()), precision_score(y_test, y_pred.round()), recall_score(y_test, y_pred.round())]
+                    del x_test, y_test
+                    print(step_res)
+                    print(datetime.now())
+                    res.append(step_res)
+                    np.savetxt("GFG.csv", res, delimiter =", ", fmt ='% s')
     return res
 
 def data_preprocess(X, Y, include_annot=False):
