@@ -35,7 +35,7 @@ def test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, window_
     x_test, y_test = data_preprocess(test_profiles, test_targets)
     return x_test, y_test
 
-def run_experiment(cnfg, context, coverage_threshold = 10, data_size=500000):
+def run_experiment(cnfg, context, coverage_threshold = 10, data_size=200000):
     graph = tf.Graph()
 
     with graph.as_default():
@@ -80,7 +80,8 @@ def run_experiment(cnfg, context, coverage_threshold = 10, data_size=500000):
         optimizer = tf.train.AdamOptimizer(1e-3).minimize(loss)
 
         x_test, y_test = test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, window_size, num_to_chr_dic)
-        test_prediction = net_MRCNN(x_test)
+        tf_test_dataset = tf.constant(x_test)
+        test_prediction = net_MRCNN(tf_test_dataset)
 
     with tf.Session(graph=graph) as sess:
         tf.global_variables_initializer().run()
