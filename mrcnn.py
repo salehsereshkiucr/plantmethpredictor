@@ -46,8 +46,6 @@ def data_preprocess(X, Y):
     X = X.reshape(list(X.shape) + [1])
     Y = np.asarray(pd.cut(Y, bins=2, labels=[0, 1], right=False))
     Y = np.expand_dims(Y, axis=1)
-    b = [j for j in range(1400)] + [j for j in range(1800, 3200)]
-    X = np.delete(X, b, 1)
     X = X.astype('float32')
     Y = Y.astype('float32')
     return X, Y
@@ -70,6 +68,7 @@ def run_experiment(cnfg, context, coverage_threshold = 10, data_size=500000):
     methylations_train, methylations_test = preprocess.seperate_methylations(organism_name, methylations, from_file=False)
     methylated_train, unmethylated_train = preprocess.methylations_subseter(methylations_train, window_size)
 
+    tf.disable_eager_execution()
     tf_train_dataset_ph = tf.placeholder(tf.float32, shape=(None, 400, 4, 1), name='X')
     tf_train_labels_ph = tf.placeholder(tf.float32, shape=(None, 1), name='Y')
     logits = net_MRCNN(tf_train_dataset_ph)
@@ -93,16 +92,7 @@ def run_experiment(cnfg, context, coverage_threshold = 10, data_size=500000):
             sess.run(optimizer, feed_dict=feed_dict)
         y_pred = test_prediction.eval()
         y_pred = np.where(y_pred > 0.5, 1, 0)
-        print(accuracy_score(y_pred, y_test))
-
-
-
-
-
-
-
-
-
+        return accuracy_score(y_pred, y_test)
 
 
 

@@ -34,6 +34,7 @@ output_root = '/home/ssere004/SalDMR/predictordataprovider/output_complete/'
 
 #This method gets for an organism and context, mekes
 def get_profiles(methylations, sample_set, sequences_onehot, annot_seqs_onehot, num_to_chr_dic, window_size=3200):
+    log = len(methylations) > 50000
     boundary_cytosines = 0
     profiles = np.zeros([len(sample_set), window_size, 4 + 2*len(annot_seqs_onehot)], dtype='short')
     targets = np.zeros(len(sample_set), dtype='short')
@@ -52,10 +53,12 @@ def get_profiles(methylations, sample_set, sequences_onehot, annot_seqs_onehot, 
         if count % int(total/10) == 0:
             now = datetime.now()
             seconds = (now - start).seconds
-            print(str(int(count * 100/total)) + '%' + ' in ' + str(seconds) +' seconds')
+            if log:
+                print(str(int(count * 100/total)) + '%' + ' in ' + str(seconds) +' seconds')
         count += 1
-    print(str(boundary_cytosines) + ' boundary cytosines are ignored')
-    print(datetime.now())
+    if log:
+        print(str(boundary_cytosines) + ' boundary cytosines are ignored')
+        print(datetime.now())
     return profiles, targets
 
 
