@@ -95,7 +95,7 @@ def run_experiment(cnfg, context, coverage_threshold = 10, data_size=200000):
             profiles, targets = pg.get_profiles(methylations_train, sample_set, sequences_onehot, annot_seqs_onehot, num_to_chr_dic, window_size=window_size)
             X, Y = data_preprocess(profiles, targets)
             feed_dict = {tf_train_dataset_ph: X, tf_train_labels_ph: Y}
-            _, l, predictions = sess.run(optimizer[optimizer, loss, train_prediction], feed_dict=feed_dict)
+            _, l, predictions = sess.run([optimizer, loss, train_prediction], feed_dict=feed_dict)
             if chunk % 50000 == 0:
                 print(chunk)
         y_pred = test_prediction.eval()
