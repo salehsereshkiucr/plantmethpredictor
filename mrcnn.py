@@ -90,6 +90,8 @@ def run_experiment(cnfg, context, coverage_threshold = 10, data_size=500000):
             X, Y = data_preprocess(profiles, targets)
             feed_dict = {tf_train_dataset_ph : X, tf_train_labels_ph : Y}
             sess.run(optimizer, feed_dict=feed_dict)
+            if chunk % 50000 == 0:
+                print(chunk)
         y_pred = test_prediction.eval()
         y_pred = np.where(y_pred > 0.5, 1, 0)
         return accuracy_score(y_pred, y_test)
