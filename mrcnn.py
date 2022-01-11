@@ -71,7 +71,6 @@ def run_experiment(cnfg, context, coverage_threshold = 10, data_size=200000):
             y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
             return y_conv
 
-
         tf.disable_eager_execution()
         tf_train_dataset_ph = tf.placeholder(tf.float32, shape=(None, 400, 4, 1), name='X')
         tf_train_labels_ph = tf.placeholder(tf.float32, shape=(None, 1), name='Y')
