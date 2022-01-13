@@ -25,5 +25,8 @@ config_list = [configs.Arabidopsis_config, configs.Cowpea_config, configs.Rice_c
 
 for i in range(6):
    res = pg.run_experiments([configs.Arabidopsis_config], context_list, window_sizes, block_sizes, [0, 200000], coverage_threshold=10, include_annot=False)
-   np.savetxt("GFG" + str(i) + ".csv", res, delimiter=", ", fmt='% s')
+   for r in res:
+      final_res.append(r)
+   np.savetxt("GFG_final_res.csv", final_res, delimiter =", ", fmt ='% s')
+    np.savetxt("GFG" + str(i) + ".csv", res, delimiter=", ", fmt='% s')
 

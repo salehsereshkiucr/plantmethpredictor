@@ -5,6 +5,8 @@ import preprocess as preprocess
 import random
 from sklearn.metrics import accuracy_score
 import numpy as np
+from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import OneHotEncoder
 
 keep_prob = 0.5
 
@@ -35,17 +37,27 @@ def test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, window_
     x_test, y_test = data_preprocess(test_profiles, test_targets)
     return x_test, y_test
 
-def run_experiment(cnfg, context, coverage_threshold = 10, data_size=200000):
-    graph = tf.Graph()
+def one_hot_encoder(data):
+  values = np.array(data)
+  label_encoder = LabelEncoder()
+  integer_encoded = label_encoder.fit_transform(values)
+  onehot_encoder = OneHotEncoder(sparse=False)
+  integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
+  onehot_encoded = onehot_encoder.fit_transform(integer_encoded)
+  return onehot_encoded
 
+def run_experiment(cnfg, context, coverage_threshold = 10, data_size=50000):
+
+    keep_prob = 0.5
+
+    graph = tf.Graph()
     with graph.as_default():
         window_size = 400
-        batch_size = 10
         organism_name = cnfg['organism_name']
         sequences_onehot, methylations, annot_seqs_onehot, num_to_chr_dic = pg.get_processed_data(cnfg, context, coverage_threshold=coverage_threshold)
         methylations_train, methylations_test = preprocess.seperate_methylations(organism_name, methylations, from_file=False)
         methylated_train, unmethylated_train = preprocess.methylations_subseter(methylations_train, window_size)
-
+        print('experiment started for ' + str(organism_name) + ' and ' + str(context))
         def net_MRCNN(x_fs):
             W_conv1 = weight_variable([1, 4, 1, 16])
             b_conv1 = bias_variable([16])
@@ -66,40 +78,40 @@ def run_experiment(cnfg, context, coverage_threshold = 10, data_size=200000):
             h_pool4 = tf.reshape(h_conv4, [-1, 2*2*64])
             h_fc1 = tf.matmul(h_pool4, W_fc1) + b_fc1
             h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
-            W_fc2 = weight_variable([80, 1])
-            b_fc2 = bias_variable([1])
+            W_fc2 = weight_variable([80, 2])
+            b_fc2 = bias_variable([2])
             y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
             return y_conv
 
         tf.disable_eager_execution()
-        tf_train_dataset_ph = tf.placeholder(tf.float32, shape=(None, 400, 4, 1), name='X')
-        tf_train_labels_ph = tf.placeholder(tf.float32, shape=(None, 1), name='Y')
-        logits = net_MRCNN(tf_train_dataset_ph)
-        loss = tf.reduce_mean(tf.square(tf_train_labels_ph - logits), reduction_indices=[1])
+        X_ph = tf.placeholder(tf.float32, shape=(None, 400, 4, 1), name='X')
+        Y_ph = tf.placeholder(tf.float32, shape=(None, 2), name='Y')
+        Z3 = net_MRCNN(X_ph)
+        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels= Y_ph ,logits= Z3))
         optimizer = tf.train.AdamOptimizer(1e-3).minimize(loss)
-
         x_test, y_test = test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, window_size, num_to_chr_dic)
-        tf_test_dataset = tf.constant(x_test)
-        test_prediction = tf.nn.softmax(net_MRCNN(tf_test_dataset))
-        train_prediction = tf.nn.softmax(logits)
+        y_test = one_hot_encoder(y_test)
 
+    batch_size = 20
+    epoc = 10
     with tf.Session(graph=graph) as sess:
         tf.global_variables_initializer().run()
-        for chunk in range(0, data_size, batch_size):
-            if chunk+batch_size > data_size:
-                break
-            else:
-                sample_set = methylated_train[chunk:chunk+batch_size]+unmethylated_train[chunk:chunk+batch_size]
-            random.shuffle(sample_set)
-            profiles, targets = pg.get_profiles(methylations_train, sample_set, sequences_onehot, annot_seqs_onehot, num_to_chr_dic, window_size=window_size)
-            X, Y = data_preprocess(profiles, targets)
-            feed_dict = {tf_train_dataset_ph: X, tf_train_labels_ph: Y}
-            _, l, predictions = sess.run([optimizer, loss, train_prediction], feed_dict=feed_dict)
-            if chunk % 50000 == 0:
-                print(chunk)
-        y_pred = test_prediction.eval()
-        y_pred = np.where(y_pred > 0.5, 1, 0)
-        return accuracy_score(y_pred, y_test)
+        for i in range(epoc):
+            for chunk in range(0, data_size, batch_size):
+                if chunk+batch_size > data_size:
+                    break
+                else:
+                    sample_set = methylated_train[chunk:chunk+batch_size]+unmethylated_train[chunk:chunk+batch_size]
+                random.shuffle(sample_set)
+                profiles, targets = pg.get_profiles(methylations_train, sample_set, sequences_onehot, annot_seqs_onehot, num_to_chr_dic, window_size=window_size)
+                X, Y = data_preprocess(profiles, targets)
+                Y = one_hot_encoder(Y)
+                feed_dict = {X_ph: X, Y_ph: Y}
+                _, l, predictions = sess.run([optimizer, loss], feed_dict=feed_dict)
+            if i%25 == 0:
+                print('epoch ' + str(i))
+        pred = Z3.eval({X_ph: x_test})
+        return np.sum(np.argmax(pred, axis=1) == np.argmax(y_test, axis=1))/len(y_test)
 
 
 
