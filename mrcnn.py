@@ -107,7 +107,7 @@ def run_experiment(cnfg, context, coverage_threshold = 10, data_size=50000):
                 X, Y = data_preprocess(profiles, targets)
                 Y = one_hot_encoder(Y)
                 feed_dict = {X_ph: X, Y_ph: Y}
-                _, l, predictions = sess.run([optimizer, loss], feed_dict=feed_dict)
+                _, l = sess.run([optimizer, loss], feed_dict=feed_dict)
             if i%25 == 0:
                 print('epoch ' + str(i))
         pred = Z3.eval({X_ph: x_test})
