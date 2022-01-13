@@ -7,6 +7,7 @@ contexts = ['CG', 'CHG', 'CHH']
 cnfg = config_list[0]
 res = []
 for context in contexts:
-    res.append([cnfg['organism_name'], context, mrcnn.run_experiment(cnfg, context)])
-    print(cnfg['organism_name'], context, mrcnn.run_experiment(cnfg, context))
-    np.savetxt("GFG_final_res.csv", res, delimiter =", ", fmt ='% s')
+    acc = mrcnn.run_experiment(cnfg, context)
+    res.append([cnfg['organism_name'], context, acc])
+    print(acc)
+    np.savetxt("GFG_mrcnn_01.csv", res, delimiter =", ", fmt ='% s')

@@ -108,6 +108,8 @@ def run_experiment(cnfg, context, coverage_threshold = 10, data_size=50000):
                 Y = one_hot_encoder(Y)
                 feed_dict = {X_ph: X, Y_ph: Y}
                 _, l = sess.run([optimizer, loss], feed_dict=feed_dict)
+                if chunk % 10000 == 0:
+                    print('it is running for ' , str(chunk))
             if i%25 == 0:
                 print('epoch ' + str(i))
         pred = Z3.eval({X_ph: x_test})
