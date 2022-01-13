@@ -40,49 +40,47 @@ def test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, window_
 def one_hot_encoder(data):
   values = np.array(data)
   label_encoder = LabelEncoder()
-  integer_encoded = label_encoder.fit_transform(values)
+  integer_encoded = label_encoder.fit_transform(values.ravel())
   onehot_encoder = OneHotEncoder(sparse=False)
   integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
   onehot_encoded = onehot_encoder.fit_transform(integer_encoded)
   return onehot_encoded
 
-def run_experiment(cnfg, context, coverage_threshold = 10, data_size=50000):
+def net_MRCNN(x_fs):
+    W_conv1 = weight_variable([1, 4, 1, 16])
+    b_conv1 = bias_variable([16])
+    h_conv1 = tf.nn.conv2d(x_fs, W_conv1, strides=[1, 1, 4, 1], padding='VALID') + b_conv1
+    h_conv1 = tf.reshape(h_conv1, [-1, 20, 20, 16])
+    W_conv2 = weight_variable([3, 3, 16, 32])
+    b_conv2 = bias_variable([32])
+    h_conv2 = tf.nn.relu(tf.nn.conv2d(h_conv1, W_conv2, strides=[1,1,1,1], padding='VALID') + b_conv2)
+    h_pool2 = tf.nn.max_pool(h_conv2,ksize=[1,3,3,1], strides=[1,3,3,1], padding='VALID')
+    W_conv3 = weight_variable([3, 3, 32, 48])
+    b_conv3 = bias_variable([48])
+    h_conv3 = tf.nn.conv2d(h_pool2, W_conv3, strides=[1,1,1,1], padding='VALID')+ b_conv3
+    W_conv4 = weight_variable([3, 3, 48, 64])
+    b_conv4 = bias_variable([64])
+    h_conv4 = tf.nn.conv2d(h_conv3, W_conv4, strides=[1,1,1,1], padding='VALID')+ b_conv4
+    W_fc1 = weight_variable([2*2*64, 80])
+    b_fc1 = bias_variable([80])
+    h_pool4 = tf.reshape(h_conv4, [-1, 2*2*64])
+    h_fc1 = tf.matmul(h_pool4, W_fc1) + b_fc1
+    h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
+    W_fc2 = weight_variable([80, 2])
+    b_fc2 = bias_variable([2])
+    y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
+    return y_conv
 
-    keep_prob = 0.5
+def run_experiment(cnfg, context, coverage_threshold = 10, data_size=200000):
+    window_size = 400
+    organism_name = cnfg['organism_name']
+    sequences_onehot, methylations, annot_seqs_onehot, num_to_chr_dic = pg.get_processed_data(cnfg, context, coverage_threshold=coverage_threshold)
+    methylations_train, methylations_test = preprocess.seperate_methylations(organism_name, methylations, from_file=False)
+    methylated_train, unmethylated_train = preprocess.methylations_subseter(methylations_train, window_size)
+    print('experiment started for ' + str(organism_name) + ' and ' + str(context))
 
     graph = tf.Graph()
     with graph.as_default():
-        window_size = 400
-        organism_name = cnfg['organism_name']
-        sequences_onehot, methylations, annot_seqs_onehot, num_to_chr_dic = pg.get_processed_data(cnfg, context, coverage_threshold=coverage_threshold)
-        methylations_train, methylations_test = preprocess.seperate_methylations(organism_name, methylations, from_file=False)
-        methylated_train, unmethylated_train = preprocess.methylations_subseter(methylations_train, window_size)
-        print('experiment started for ' + str(organism_name) + ' and ' + str(context))
-        def net_MRCNN(x_fs):
-            W_conv1 = weight_variable([1, 4, 1, 16])
-            b_conv1 = bias_variable([16])
-            h_conv1 = tf.nn.conv2d(x_fs, W_conv1, strides=[1, 1, 4, 1], padding='VALID') + b_conv1
-            h_conv1 = tf.reshape(h_conv1, [-1, 20, 20, 16])
-            W_conv2 = weight_variable([3, 3, 16, 32])
-            b_conv2 = bias_variable([32])
-            h_conv2 = tf.nn.relu(tf.nn.conv2d(h_conv1, W_conv2, strides=[1,1,1,1], padding='VALID') + b_conv2)
-            h_pool2 = tf.nn.max_pool(h_conv2,ksize=[1,3,3,1], strides=[1,3,3,1], padding='VALID')
-            W_conv3 = weight_variable([3, 3, 32, 48])
-            b_conv3 = bias_variable([48])
-            h_conv3 = tf.nn.conv2d(h_pool2, W_conv3, strides=[1,1,1,1], padding='VALID')+ b_conv3
-            W_conv4 = weight_variable([3, 3, 48, 64])
-            b_conv4 = bias_variable([64])
-            h_conv4 = tf.nn.conv2d(h_conv3, W_conv4, strides=[1,1,1,1], padding='VALID')+ b_conv4
-            W_fc1 = weight_variable([2*2*64, 80])
-            b_fc1 = bias_variable([80])
-            h_pool4 = tf.reshape(h_conv4, [-1, 2*2*64])
-            h_fc1 = tf.matmul(h_pool4, W_fc1) + b_fc1
-            h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
-            W_fc2 = weight_variable([80, 2])
-            b_fc2 = bias_variable([2])
-            y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
-            return y_conv
-
         tf.disable_eager_execution()
         X_ph = tf.placeholder(tf.float32, shape=(None, 400, 4, 1), name='X')
         Y_ph = tf.placeholder(tf.float32, shape=(None, 2), name='Y')
@@ -93,7 +91,7 @@ def run_experiment(cnfg, context, coverage_threshold = 10, data_size=50000):
         y_test = one_hot_encoder(y_test)
 
     batch_size = 20
-    epoc = 10
+    epoc = 20
     with tf.Session(graph=graph) as sess:
         tf.global_variables_initializer().run()
         for i in range(epoc):
@@ -108,24 +106,11 @@ def run_experiment(cnfg, context, coverage_threshold = 10, data_size=50000):
                 Y = one_hot_encoder(Y)
                 feed_dict = {X_ph: X, Y_ph: Y}
                 _, l = sess.run([optimizer, loss], feed_dict=feed_dict)
-                if chunk % 10000 == 0:
-                    print('it is running for ' , str(chunk))
-            if i%25 == 0:
+                if chunk % 100000 == 0:
+                    print('it is running for ', str(chunk))
+            if i%5 == 0:
                 print('epoch ' + str(i))
         pred = Z3.eval({X_ph: x_test})
         return np.sum(np.argmax(pred, axis=1) == np.argmax(y_test, axis=1))/len(y_test)
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
