@@ -23,10 +23,11 @@ final_res = []
 steps = [0, 40000, 80000, 120000, 200000, 400000, 600000, 800000, 1000000]
 config_list = [configs.Arabidopsis_config, configs.Cowpea_config, configs.Rice_config, configs.Cucumber_config, configs.Tomato_config]
 
-for i in range(6):
-   res = pg.run_experiments([configs.Arabidopsis_config], context_list, window_sizes, block_sizes, [0, 200000], coverage_threshold=10, include_annot=False)
-   for r in res:
-      final_res.append(r)
-   np.savetxt("GFG_final_res.csv", final_res, delimiter =", ", fmt ='% s')
-    np.savetxt("GFG" + str(i) + ".csv", res, delimiter=", ", fmt='% s')
+# for i in range(6):
+#    res = pg.run_experiments([configs.Arabidopsis_config], context_list, window_sizes, block_sizes, [0, 200000], coverage_threshold=10, include_annot=False)
+#    for r in res:
+#       final_res.append(r)
+#    np.savetxt("GFG_final_res.csv", final_res, delimiter =", ", fmt ='% s')
 
+res = pg.run_experiments(config_list, context_list, [3200], [(80, 40)], [0, 555555], coverage_threshold=10, include_annot=False)
+np.savetxt("GFG_seq_only.csv", final_res, delimiter=", ", fmt='% s')

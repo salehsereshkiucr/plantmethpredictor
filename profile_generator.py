@@ -35,6 +35,7 @@ output_root = '/home/ssere004/SalDMR/predictordataprovider/output_complete/'
 #This method gets for an organism and context, mekes
 def get_profiles(methylations, sample_set, sequences_onehot, annot_seqs_onehot, num_to_chr_dic, window_size=3200):
     log = len(sample_set) > 50000
+    log = False
     boundary_cytosines = 0
     profiles = np.zeros([len(sample_set), window_size, 4 + 2*len(annot_seqs_onehot)], dtype='short')
     targets = np.zeros(len(sample_set), dtype='short')
@@ -152,7 +153,7 @@ def run_experiments(config_list, context_list, window_sizes, block_sizes, steps,
                         x_train, x_val, y_train, y_val = split_data(X, Y, pcnt=0.1)
                         x_train_sz += len(x_train)
                         with tf.device('/device:GPU:0'):
-                            print('model fitting started for ' + organism_name)
+                            print('model fitting started for ' + organism_name + ' ' + context)
                             print(datetime.now())
                             model.fit(x_train, y_train, batch_size=32, epochs=45, verbose=0, validation_data=(x_val, y_val))
                             print('model fitting ended for ' + str(len(x_train)) + ' data')
