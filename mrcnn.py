@@ -96,8 +96,8 @@ def run_experiment(cnfg, context, coverage_threshold = 10, data_size=200000):
         tf.global_variables_initializer().run()
         for i in range(epoc):
             for chunk in range(0, data_size, batch_size):
-                if chunk+batch_size > data_size:
-                    break
+                if chunk+batch_size > data_size or chunk+batch_size > len(methylated_train) or chunk+batch_size > len(unmethylated_train):
+                    continue
                 else:
                     sample_set = methylated_train[chunk:chunk+batch_size]+unmethylated_train[chunk:chunk+batch_size]
                 random.shuffle(sample_set)
