@@ -8,8 +8,7 @@ import numpy as np
 from hyperopt import fmin
 from nbconvert import PythonExporter
 
-from .ensemble import VotingModel
-from .utils import (
+from hyperas.utils import (
     remove_imports, remove_all_comments, extract_imports, temp_string,
     write_temp_files, determine_indent, with_line_numbers, unpack_hyperopt_vals,
     eval_hyperopt_space, find_signature_end)
