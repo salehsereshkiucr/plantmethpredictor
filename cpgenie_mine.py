@@ -22,7 +22,7 @@ def test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, window_
     x_test, y_test = preprocess.cpgenie_preprocess(test_profiles, test_targets)
     return x_test, y_test
 
-def run_experiments(config_list, context_list, steps, coverage_threshold=10, include_annot=True, memory_chunk_size=10000):
+def run_experiments(config_list, context_list, steps, coverage_threshold=10, include_annot=False, memory_chunk_size=10000):
     res = []
     for cnfg in config_list:
         organism_name = cnfg['organism_name']
