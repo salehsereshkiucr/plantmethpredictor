@@ -87,8 +87,10 @@ def run_experiments(config_list, context_list, steps, coverage_threshold=10, inc
                 model_tag = str(organism_name) + str(context) + str(x_train_sz) + str(1000) + '.mdl'
                 model.save('./models/' + model_tag)
 
-                x_test, y_test = pg.test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, 1000, num_to_chr_dic, include_annot=include_annot)
+                x_test, y_test = test_sampler(methylations_test, sequences_onehot, annot_seqs_onehot, 1000, num_to_chr_dic, include_annot=include_annot)
                 y_pred = model.predict(x_test)
+                y_pred = np.argmax(y_pred, axis=1)
+                y_test = np.argmax(y_test, axis=1)
                 tag = 'seq-only'
                 if include_annot:
                     tag = 'seq-annot'

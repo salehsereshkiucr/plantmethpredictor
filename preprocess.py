@@ -168,7 +168,7 @@ def cpgenie_preprocess(X, Y):
     b[np.arange(Y.size), Y] = 1
     Y = b
     X = X.reshape(list(X.shape) + [1])
-    #X = np.swapaxes(X, 1, 2)
+    X = np.swapaxes(X, 1, 2)
     return X, Y
 
 def save_dic(file_name, dic):
