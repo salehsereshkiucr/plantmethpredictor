@@ -161,7 +161,14 @@ def seperate_methylations(organism_name, methylations, test_ratio = 0.1, from_fi
     methylations_test.to_csv('./dump_files/'+organism_name+'_methylations_test.csv', header=True, index=False)
     return methylations_train, methylations_test
 
-
+def cpgenie_preprocess(X, Y):
+    Y = np.asarray(pd.cut(Y, bins=2, labels=[0, 1], right=False))
+    b = np.zeros((Y.size, Y.max()+1))
+    b[np.arange(Y.size), Y] = 1
+    Y = b
+    X = X.reshape(list(X.shape) + [1])
+    X = np.swapaxes(X, 1, 2)
+    return X, Y
 
 def save_dic(file_name, dic):
     f = open(file_name, "wb")
