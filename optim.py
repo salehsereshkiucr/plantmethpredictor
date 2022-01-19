@@ -1,0 +1,361 @@
+import inspect
+import os
+import re
+import sys
+
+import nbformat
+import numpy as np
+from hyperopt import fmin
+from nbconvert import PythonExporter
+
+from .ensemble import VotingModel
+from .utils import (
+    remove_imports, remove_all_comments, extract_imports, temp_string,
+    write_temp_files, determine_indent, with_line_numbers, unpack_hyperopt_vals,
+    eval_hyperopt_space, find_signature_end)
+
+import numpy as np
+from tensorflow.keras.models import model_from_yaml
+
+
+class VotingModel(object):
+
+    def __init__(self, model_list, voting='hard',
+                 weights=None, nb_classes=None):
+        """(Weighted) majority vote model for a given list of Keras models.
+        Parameters
+        ----------
+        model_list: An iterable of Keras models.
+        voting: Choose 'hard' for straight-up majority vote of highest model probilities or 'soft'
+            for a weighted majority vote. In the latter, a weight vector has to be specified.
+        weights: Weight vector (numpy array) used for soft majority vote.
+        nb_classes: Number of classes being predicted.
+        Returns
+        -------
+        A voting model that has a predict method with the same signature of a single keras model.
+        """
+        self.model_list = model_list
+        self.voting = voting
+        self.weights = weights
+        self.nb_classes = nb_classes
+
+        if voting not in ['hard', 'soft']:
+            raise 'Voting has to be either hard or soft'
+
+        if weights is not None:
+            if len(weights) != len(model_list):
+                raise ('Number of models {0} and length of weight vector {1} has to match.'
+                       .format(len(weights), len(model_list)))
+
+    def predict(self, X, batch_size=128, verbose=0):
+        predictions = list(map(lambda model: model.predict(X, batch_size, verbose), self.model_list))
+        nb_preds = len(X)
+
+        if self.voting == 'hard':
+            for i, pred in enumerate(predictions):
+                pred = list(map(
+                    lambda probas: np.argmax(probas, axis=-1), pred
+                ))
+                predictions[i] = np.asarray(pred).reshape(nb_preds, 1)
+            argmax_list = list(np.concatenate(predictions, axis=1))
+            votes = np.asarray(list(
+                map(lambda arr: max(set(arr)), argmax_list)
+            ))
+        if self.voting == 'soft':
+            for i, pred in enumerate(predictions):
+                pred = list(map(lambda probas: probas * self.weights[i], pred))
+                predictions[i] = np.asarray(pred).reshape(nb_preds, self.nb_classes, 1)
+            weighted_preds = np.concatenate(predictions, axis=2)
+            weighted_avg = np.mean(weighted_preds, axis=2)
+            votes = np.argmax(weighted_avg, axis=1)
+
+        return votes
+
+
+def voting_model_from_yaml(yaml_list, voting='hard', weights=None):
+    model_list = map(lambda yml: model_from_yaml(yml), yaml_list)
+    return VotingModel(model_list, voting, weights)
+
+sys.path.append(".")
+
+
+def minimize(model,
+             data,
+             algo,
+             max_evals,
+             trials,
+             functions=None,
+             rseed=1337,
+             notebook_name=None,
+             verbose=True,
+             eval_space=False,
+             return_space=False,
+             keep_temp=False,
+             data_args=None):
+    """
+    Minimize a keras model for given data and implicit hyperparameters.
+    Parameters
+    ----------
+    model: A function defining a keras model with hyperas templates, which returns a
+        valid hyperopt results dictionary, e.g.
+        return {'loss': -acc, 'status': STATUS_OK}
+    data: A parameter-less function that defines and return all data needed in the above
+        model definition.
+    algo: A hyperopt algorithm, like tpe.suggest or rand.suggest
+    max_evals: Maximum number of optimization runs
+    trials: A hyperopt trials object, used to store intermediate results for all
+        optimization runs
+    rseed: Integer random seed for experiments
+    notebook_name: If running from an ipython notebook, provide filename (not path)
+    verbose: Print verbose output
+    eval_space: Evaluate the best run in the search space such that 'choice's contain actually meaningful values instead of mere indices
+    return_space: Return the hyperopt search space object (e.g. for further processing) as last return value
+    keep_temp: Keep temp_model.py file on the filesystem
+    data_args: Arguments to be passed to data function
+    Returns
+    -------
+    If `return_space` is False: A pair consisting of the results dictionary of the best run and the corresponding
+    keras model.
+    If `return_space` is True: The pair of best result and corresponding keras model, and the hyperopt search space
+    """
+    best_run, space = base_minimizer(model=model,
+                                     data=data,
+                                     functions=functions,
+                                     algo=algo,
+                                     max_evals=max_evals,
+                                     trials=trials,
+                                     rseed=rseed,
+                                     full_model_string=None,
+                                     notebook_name=notebook_name,
+                                     verbose=verbose,
+                                     keep_temp=keep_temp,
+                                     data_args=data_args)
+
+    best_model = None
+    for trial in trials:
+        vals = trial.get('misc').get('vals')
+        # unpack the values from lists without overwriting the mutable dict within 'trial'
+        unpacked_vals = unpack_hyperopt_vals(vals)
+        # identify the best_run (comes with unpacked values from the hyperopt function `base.Trials.argmin`)
+        if unpacked_vals == best_run and 'model' in trial.get('result').keys():
+            best_model = trial.get('result').get('model')
+
+    if eval_space is True:
+        # evaluate the search space
+        best_run = eval_hyperopt_space(space, best_run)
+
+    if return_space is True:
+        # return the space as well
+        return best_run, best_model, space
+    else:
+        # the default case for backwards compatibility with expanded return arguments
+        return best_run, best_model
+
+
+def base_minimizer(model, data, functions, algo, max_evals, trials,
+                   rseed=1337, full_model_string=None, notebook_name=None,
+                   verbose=True, stack=3, keep_temp=False, data_args=None):
+    if full_model_string is not None:
+        model_str = full_model_string
+    else:
+        model_str = get_hyperopt_model_string(model, data, functions, notebook_name, verbose, stack, data_args=data_args)
+    temp_file = './temp_model.py'
+    write_temp_files(model_str, temp_file)
+
+    if 'temp_model' in sys.modules:
+        del sys.modules["temp_model"]
+
+    try:
+        from temp_model import keras_fmin_fnct, get_space
+    except:
+        print("Unexpected error: {}".format(sys.exc_info()[0]))
+        raise
+    try:
+        if not keep_temp:
+            os.remove(temp_file)
+            os.remove(temp_file + 'c')
+    except OSError:
+        pass
+
+    try:
+        # for backward compatibility.
+        return (
+            fmin(keras_fmin_fnct,
+                 space=get_space(),
+                 algo=algo,
+                 max_evals=max_evals,
+                 trials=trials,
+                 rseed=rseed,
+                 return_argmin=True),
+            get_space()
+        )
+    except TypeError:
+        pass
+
+    return (
+        fmin(keras_fmin_fnct,
+             space=get_space(),
+             algo=algo,
+             max_evals=max_evals,
+             trials=trials,
+             rstate=np.random.RandomState(rseed),
+             return_argmin=True),
+        get_space()
+    )
+
+
+def best_ensemble(nb_ensemble_models, model, data, algo, max_evals,
+                  trials, voting='hard', weights=None, nb_classes=None, functions=None):
+    model_list = best_models(nb_models=nb_ensemble_models,
+                             model=model,
+                             data=data,
+                             algo=algo,
+                             max_evals=max_evals,
+                             trials=trials,
+                             functions=functions)
+    return VotingModel(model_list, voting, weights, nb_classes)
+
+
+def best_models(nb_models, model, data, algo, max_evals, trials, functions=None, keep_temp=False):
+    base_minimizer(model=model,
+                   data=data,
+                   functions=functions,
+                   algo=algo,
+                   max_evals=max_evals,
+                   trials=trials,
+                   stack=4,
+                   keep_temp=keep_temp)
+    if len(trials) < nb_models:
+        nb_models = len(trials)
+    scores = [trial.get('result').get('loss') for trial in trials]
+    cut_off = sorted(scores, reverse=True)[nb_models - 1]
+    model_list = [trial.get('result').get('model') for trial in trials if trial.get('result').get('loss') >= cut_off]
+    return model_list
+
+
+def get_hyperopt_model_string(model, data, functions, notebook_name, verbose, stack, data_args):
+    model_string = inspect.getsource(model)
+    model_string = remove_imports(model_string)
+
+    if notebook_name:
+        notebook_path = os.getcwd() + "/{}.ipynb".format(notebook_name)
+        with open(notebook_path, 'r') as f:
+            notebook = nbformat.reads(f.read(), nbformat.NO_CONVERT)
+            exporter = PythonExporter()
+            source, _ = exporter.from_notebook_node(notebook)
+    else:
+        calling_script_file = os.path.abspath(inspect.stack()[stack][1])
+        with open(calling_script_file, 'r') as f:
+            source = f.read()
+
+    cleaned_source = remove_all_comments(source)
+    imports = extract_imports(cleaned_source, verbose)
+
+    parts = hyperparameter_names(model_string)
+    aug_parts = augmented_names(parts)
+
+    hyperopt_params = get_hyperparameters(model_string)
+    space = get_hyperopt_space(parts, hyperopt_params, verbose)
+
+    functions_string = retrieve_function_string(functions, verbose)
+    data_string = retrieve_data_string(data, verbose, data_args)
+    model = hyperopt_keras_model(model_string, parts, aug_parts, verbose)
+
+    temp_str = temp_string(imports, model, data_string, functions_string, space)
+    return temp_str
+
+
+def get_hyperopt_space(parts, hyperopt_params, verbose=True):
+    space = "def get_space():\n    return {\n"
+    for name, param in zip(parts, hyperopt_params):
+        param = re.sub(r"\(", "('" + name + "', ", param, 1)
+        space += "        '" + name + "': hp." + param + ",\n"
+    space = space[:-1]
+    space += "\n    }\n"
+    if verbose:
+        print('>>> Hyperas search space:\n')
+        print(space)
+    return space
+
+
+def retrieve_data_string(data, verbose=True, data_args=None):
+    data_string = inspect.getsource(data)
+    first_line = data_string.split("\n")[0]
+    indent_length = len(determine_indent(data_string))
+    data_string = data_string.replace(first_line, "")
+    r = re.compile(r'^\s*return.*')
+    last_line = [s for s in reversed(data_string.split("\n")) if r.match(s)][0]
+    data_string = data_string.replace(last_line, "")
+
+    required_arguments = inspect.getfullargspec(data).args
+    if required_arguments:
+        if data_args is None:
+            raise ValueError(
+                "Data function takes arguments {} but no values are passed via data_args".format(required_arguments))
+        data_string = "\n".join("    {} = {}".format(x, repr(y)) for x, y in zip(required_arguments, data_args)) + data_string
+    split_data = data_string.split("\n")
+    for i, line in enumerate(split_data):
+        split_data[i] = line[indent_length:] + "\n"
+    data_string = ''.join(split_data)
+    if verbose:
+        print(">>> Data")
+        print(with_line_numbers(data_string))
+    return data_string
+
+
+def retrieve_function_string(functions, verbose=True):
+    function_strings = ''
+    if functions is None:
+        return function_strings
+    for function in functions:
+        function_string = inspect.getsource(function)
+        function_strings = function_strings + function_string + '\n'
+    if verbose:
+        print(">>> Functions")
+        print(with_line_numbers(function_strings))
+    return function_strings
+
+
+def hyperparameter_names(model_string):
+    parts = []
+    params = re.findall(r"(\{\{[^}]+}\})", model_string)
+    for param in params:
+        name = re.findall(r"(\w+(?=\s*[\=\(]\s*" + re.escape(param) + r"))", model_string)
+        if len(name) > 0:
+            parts.append(name[0])
+        else:
+            parts.append(parts[-1])
+    part_dict = {}
+    for i, part in enumerate(parts):
+        if part in part_dict.keys():
+            part_dict[part] += 1
+            parts[i] = part + "_" + str(part_dict[part])
+        else:
+            part_dict[part] = 0
+    return parts
+
+
+def get_hyperparameters(model_string):
+    hyperopt_params = re.findall(r"(\{\{[^}]+}\})", model_string)
+    for i, param in enumerate(hyperopt_params):
+        hyperopt_params[i] = re.sub(r"[\{\}]", '', param)
+    return hyperopt_params
+
+
+def augmented_names(parts):
+    aug_parts = []
+    for i, part in enumerate(parts):
+        aug_parts.append("space['" + part + "']")
+    return aug_parts
+
+
+def hyperopt_keras_model(model_string, parts, aug_parts, verbose=True):
+    colon_index = find_signature_end(model_string)
+    func_sign_line_end = model_string.count("\n", 0, colon_index) + 1
+    func_sign_lines = "\n".join(model_string.split("\n")[:func_sign_line_end])
+    model_string = model_string.replace(func_sign_lines, "def keras_fmin_fnct(space):\n")
+    result = re.sub(r"(\{\{[^}]+}\})", lambda match: aug_parts.pop(0), model_string, count=len(parts))
+    if verbose:
+        print('>>> Resulting replaced keras model:\n')
+        print(with_line_numbers(result))
+    return result

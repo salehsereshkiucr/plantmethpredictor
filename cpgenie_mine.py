@@ -18,7 +18,7 @@ def run_experiment(organism_name, context, i, root):
     b[np.arange(Y.size),Y] = 1
     Y = b
     X = X.reshape(list(X.shape) + [1])
-    X = np.swapaxes(X,1,2)
+    X = np.swapaxes(X, 1, 2)
 
     PROFILE_COLS = X.shape[1]
     PROFILE_ROWS = X.shape[2]
