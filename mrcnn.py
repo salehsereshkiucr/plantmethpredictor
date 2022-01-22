@@ -71,7 +71,7 @@ def net_MRCNN(x_fs):
     y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
     return y_conv
 
-def run_experiment(cnfg, context, coverage_threshold = 10, data_size=200000):
+def run_experiment(cnfg, context, coverage_threshold = 10, data_size=500000):
     window_size = 400
     organism_name = cnfg['organism_name']
     sequences_onehot, methylations, annot_seqs_onehot, num_to_chr_dic = pg.get_processed_data(cnfg, context, coverage_threshold=coverage_threshold)

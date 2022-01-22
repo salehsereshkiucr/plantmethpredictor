@@ -2,7 +2,7 @@ import mrcnn
 import configs as configs
 import numpy as np
 config_list = [configs.Arabidopsis_config, configs.Cowpea_config, configs.Rice_config, configs.Cucumber_config, configs.Tomato_config]
-config_list = [configs.Cucumber_config, configs.Tomato_config]
+#config_list = [configs.Cucumber_config, configs.Tomato_config]
 contexts = ['CG', 'CHG', 'CHH']
 
 cnfg = config_list[0]
@@ -13,4 +13,4 @@ for cnfg in config_list:
         res.append([cnfg['organism_name'], context, acc])
         print('################################')
         print([cnfg['organism_name'], context, acc])
-        np.savetxt("GFG_mrcnn_02.csv", res, delimiter =", ", fmt ='% s')
+        np.savetxt("GFG_mrcnn_03.csv", res, delimiter =", ", fmt ='% s')
