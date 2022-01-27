@@ -13,4 +13,4 @@ for cnfg in config_list:
         res.append([cnfg['organism_name'], context, acc])
         print('################################')
         print([cnfg['organism_name'], context, acc])
-        np.savetxt("GFG_mrcnn_03.csv", res, delimiter =", ", fmt ='% s')
+        np.savetxt("GFG_mrcnn_03.csv", res, delimiter=", ", fmt='% s')
