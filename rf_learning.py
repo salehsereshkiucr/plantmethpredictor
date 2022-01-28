@@ -35,11 +35,11 @@ for cnfg in config_list:
                 xx = xx.reshape((nsamples, nx*ny))
                 yy = y_train[chunk: chunk+10000]
                 clf.fit(xx, yy)
-                clf.n_estimators += 50
+                clf.n_estimators += 100
         nsamples, nx, ny, nz = x_test.shape
         x_test = x_test.reshape((nsamples, nx*ny))
         y_pred=clf.predict(x_test)
-        step_res = ["organism_name", context, final_ds, metrics.accuracy_score(y_test, y_pred)]
+        step_res = [organism_name, context, final_ds, metrics.accuracy_score(y_test, y_pred)]
         res.append(step_res)
         print(step_res)
         np.savetxt("GFG.csv", res, delimiter =", ", fmt ='% s')
