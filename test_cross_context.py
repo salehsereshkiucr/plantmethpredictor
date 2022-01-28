@@ -45,5 +45,5 @@ for cnfg in cnfgs:
             step_res = [organism_name, context, test_context, tag, window_size, 500000, len(x_test), accuracy_score(y_test, y_pred.round()),
                                 f1_score(y_test, y_pred.round()), precision_score(y_test, y_pred.round()), recall_score(y_test, y_pred.round())]
             res.append(step_res)
-            np.savetxt("GFG_cross_organism1.csv", res, delimiter =", ", fmt ='% s')
+            np.savetxt("GFG_cross_context.csv", res, delimiter =", ", fmt ='% s')
 
