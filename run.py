@@ -25,7 +25,7 @@ config_list = [configs.Arabidopsis_config, configs.Cowpea_config, configs.Rice_c
 config_list = [configs.Cowpea_config, configs.Rice_config, configs.Cucumber_config, configs.Tomato_config]
 
 res = pg.run_experiments(config_list, context_list, [6400], [(80, 80)], [0, 500000], coverage_threshold=10, include_annot=False)
-np.savetxt("GFG_final_res_ws6400.csv", final_res, delimiter =", ", fmt ='% s')
+np.savetxt("GFG_final_res_ws6400.csv", final_res, delimiter=", ", fmt='% s')
 # for i in range(6):
 #    res = pg.run_experiments([configs.Arabidopsis_config], context_list, [6400], [(80, 80)], [0, 200000], coverage_threshold=10, include_annot=False)
 #    for r in res:
