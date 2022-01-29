@@ -22,7 +22,7 @@ final_res = []
 
 steps = [0, 40000, 80000, 120000, 200000, 400000, 600000, 800000, 1000000]
 config_list = [configs.Arabidopsis_config, configs.Cowpea_config, configs.Rice_config, configs.Cucumber_config, configs.Tomato_config]
-config_list = [configs.Cowpea_config, configs.Rice_config, configs.Cucumber_config, configs.Tomato_config]
+config_list = [configs.Rice_config, configs.Cucumber_config, configs.Tomato_config]
 
 res = pg.run_experiments(config_list, context_list, [6400], [(80, 80)], [0, 500000], coverage_threshold=10, include_annot=False)
 np.savetxt("GFG_final_res_ws6400.csv", res, delimiter=", ", fmt='% s')
