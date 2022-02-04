@@ -76,7 +76,10 @@ def get_methylations(cnfg, context, coverage_threshold):
     methylations = data_reader.read_methylations(cnfg['methylation_address'], context, coverage_threshold=coverage_threshold)
     if organism_name == configs.Cowpea_config['organism_name']:
         methylations = compatibility.cowpea_methylation_compatibility(methylations)
-    methylations, num_to_chr_dic = preprocess.shrink_methylation(methylations)
+    if len(context) != 0:
+        methylations, num_to_chr_dic = preprocess.shrink_methylation(methylations)
+    else:
+        methylations, num_to_chr_dic = preprocess.shrink_methylation(methylations, include_context=True)
     return methylations, num_to_chr_dic
 
 def get_processed_data(cnfg, context, coverage_threshold=10, annotseqs_from_file=True, sequneces_df_from_file=True):
