@@ -44,9 +44,11 @@ def shrink_methylation(methylations, include_context = False):
     for i in range(len(unique_chrs)):
         chr_to_num_dic[chr_ndarray[unique_indices[i]]] = unique_chrs[i]
     chr_ndarray = chr_ndarray.astype('short')
-    methylations = pd.DataFrame({'chr': chr_ndarray, 'position': positions_ndarray, 'mlevel': mlevels_ndarray})
     if include_context:
         methylations = pd.DataFrame({'chr': chr_ndarray, 'position': positions_ndarray, 'mlevel': mlevels_ndarray, 'context': methylations['context']})
+    else:
+        methylations = pd.DataFrame({'chr': chr_ndarray, 'position': positions_ndarray, 'mlevel': mlevels_ndarray})
+
     methylations['chr'] = methylations['chr'].astype(int)
     methylations['position'] = methylations['position'].astype(int)
     methylations['mlevel'] = methylations['mlevel'].astype(float)
