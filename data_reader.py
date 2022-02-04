@@ -24,9 +24,11 @@ def read_methylations(address, context, coverage_threshold = 10):
     methylations = pd.read_table(address)
     methylations.columns = ['chr', 'position', 'strand', 'meth', 'unmeth', 'context', 'three']
     methylations.drop(['three'], axis=1)
-    methylations = methylations[methylations['context'] == context]
+    if len(context) != 0:
+        methylations = methylations[methylations['context'] == context]
     methylations = methylations[methylations['meth'] + methylations['unmeth'] > coverage_threshold]
-    methylations.drop(['context'], axis=1)
+    if len(context) != 0:
+        methylations.drop(['context'], axis=1)
     methylations.drop(['strand'], axis=1)
     methylations = methylations.reset_index(drop=True)
     return methylations

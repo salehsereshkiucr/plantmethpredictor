@@ -71,18 +71,22 @@ def get_window_seqgene_df(sequences_df, annot_seq_df_list, chro, center, window_
     return profile_df
 
 
-
+def get_methylations(cnfg, context, coverage_threshold):
+    organism_name = cnfg['organism_name']
+    methylations = data_reader.read_methylations(cnfg['methylation_address'], context, coverage_threshold=coverage_threshold)
+    if organism_name == configs.Cowpea_config['organism_name']:
+        methylations = compatibility.cowpea_methylation_compatibility(methylations)
+    methylations, num_to_chr_dic = preprocess.shrink_methylation(methylations)
+    return methylations, num_to_chr_dic
 
 def get_processed_data(cnfg, context, coverage_threshold=10, annotseqs_from_file=True, sequneces_df_from_file=True):
     organism_name = cnfg['organism_name']
-    methylations = data_reader.read_methylations(cnfg['methylation_address'], context, coverage_threshold=coverage_threshold)
     sequences = data_reader.readfasta(cnfg['seq_address']) #Can get shrinked the size.
     annot_df = data_reader.read_annot(cnfg['annot_address'])
     if organism_name == configs.Cowpea_config['organism_name']:
         sequences = compatibility.cowpea_sequence_dic_key_compatibility(sequences)
         annot_df = compatibility.cowpea_annotation_compatibility(annot_df)
-        methylations = compatibility.cowpea_methylation_compatibility(methylations)
-    methylations, num_to_chr_dic = preprocess.shrink_methylation(methylations)
+    methylations, num_to_chr_dic = get_methylations(cnfg, context, coverage_threshold)
     annot_seq_df_list = []
     annot_tag = ''
     for at in cnfg['annot_types']:
