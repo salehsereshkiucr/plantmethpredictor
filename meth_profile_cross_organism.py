@@ -40,7 +40,6 @@ def profiler(cnfg, methylations, context, datasize, window_size=20):
             if lcp > 0 and lcp < len(mlevels) - window_size:
                 avlbls = np.setdiff1d(avlbls, range(lcp-half_w, lcp+half_w))
         np.save('./temporary_files/' +organism_name+'_meth_avlbls.npy', avlbls)
-
     smple = random.sample(list(avlbls), datasize)
     count_errored = 0
     for index, p in enumerate(smple):
@@ -53,9 +52,8 @@ def profiler(cnfg, methylations, context, datasize, window_size=20):
     print(count_errored, ' profiles faced error')
     return X, Y
 
-def run_experiment(X, Y, window_size=20, test_percent=0.2, test_val_percent = 0.5):
-    x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=test_percent, random_state=None)
-    x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=test_val_percent, random_state=None)
+def run_experiment(X, Y, x_test=None, y_test=None, window_size=20, test_percent=0.1):
+    x_train, x_val, y_train, y_val = train_test_split(X, Y, test_size=test_percent, random_state=None)
     model = Sequential()
     model.add(Dense(window_size, activation='relu', input_shape=((window_size,1))))
     model.add(Dropout(0.5))
@@ -72,14 +70,19 @@ def run_experiment(X, Y, window_size=20, test_percent=0.2, test_val_percent = 0.
     return accuracy_score(y_test, y_pred.round())
 
 def experiments(config_list, context_list, dataset_size=50000, window_size=20, coverage_threshold=10):
+    test_dataset_size = 20000
     res = []
     for cnfg in config_list:
         methylations, num_to_chr_dic = pg.get_methylations(cnfg, '', coverage_threshold)
         for context in context_list:
             X, Y = profiler(cnfg, methylations, context, dataset_size, window_size=window_size)
-            acc = run_experiment(X, Y, window_size=window_size, test_percent=0.2, test_val_percent=0.5)
-            res_row = [cnfg['organism_name'], context, acc]
-            print(res_row)
-            res.append(res_row)
-            np.savetxt("meth_profiles.csv", res, delimiter =", ", fmt ='% s')
+            for test_config in config_list:
+                if cnfg['organism_name'] != test_config['organism_name']:
+                    test_methylations, test_num_to_chr_dic = pg.get_methylations(cnfg, '', coverage_threshold)
+                    X_test, Y_test = profiler(test_config, test_methylations, context, test_dataset_size, window_size=window_size)
+                    acc = run_experiment(X, Y, x_test=X_test, y_test=Y_test, window_size=window_size, test_percent=0.2, test_val_percent=0.5)
+                    res_row = [cnfg['organism_name'], test_config['organism_name'], context, acc]
+                    print(res_row)
+                    res.append(res_row)
+                    np.savetxt("meth_profiles.csv", res, delimiter=", ", fmt ='% s')
 
