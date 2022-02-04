@@ -35,10 +35,15 @@ def profiler(methylations, context, datasize, window_size=20):
         if lcp > 0 and lcp < len(mlevels) - window_size:
             avlbls = np.setdiff1d(avlbls, range(lcp-half_w, lcp+half_w))
     smple = random.sample(list(avlbls), datasize)
+    count_errored = 0
     for index, p in enumerate(smple):
-        X[index] = np.concatenate((mlevels[p-half_w: p] , mlevels[p+1: p+half_w+1]), axis=0)
-        Y[index] = 0 if mlevels[p] < 0.5 else 1
+        try:
+            X[index] = np.concatenate((mlevels[p-half_w: p], mlevels[p+1: p+half_w+1]), axis=0)
+            Y[index] = 0 if mlevels[p] < 0.5 else 1
+        except ValueError:
+            count_errored += 1
     X = X.reshape(list(X.shape) + [1])
+    print(count_errored, ' profiles faced error')
     return X, Y
 
 def run_experiment(X, Y, window_size=20, test_percent=0.2, test_val_percent = 0.5):
@@ -65,7 +70,7 @@ def experiments(config_list, context_list, dataset_size=50000, window_size=20, c
         methylations, num_to_chr_dic = pg.get_methylations(cnfg, '', coverage_threshold)
         for context in context_list:
             X, Y = profiler(methylations, context, dataset_size, window_size=window_size)
-            acc = run_experiment(X, Y, window_size=20, test_percent=0.2, test_val_percent=0.5)
+            acc = run_experiment(X, Y, window_size=window_size, test_percent=0.2, test_val_percent=0.5)
             res_row = [cnfg['organism_name'], context, acc]
             print(res_row)
             res.append(res_row)
