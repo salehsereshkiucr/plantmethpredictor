@@ -80,7 +80,7 @@ def experiments(config_list, context_list, dataset_size=50000, window_size=20, c
                 if cnfg['organism_name'] != test_config['organism_name']:
                     test_methylations, test_num_to_chr_dic = pg.get_methylations(cnfg, '', coverage_threshold)
                     X_test, Y_test = profiler(test_config, test_methylations, context, test_dataset_size, window_size=window_size)
-                    acc = run_experiment(X, Y, x_test=X_test, y_test=Y_test, window_size=window_size, test_percent=0.2, test_val_percent=0.5)
+                    acc = run_experiment(X, Y, x_test=X_test, y_test=Y_test, window_size=window_size, test_percent=0.2)
                     res_row = [cnfg['organism_name'], test_config['organism_name'], context, acc]
                     print(res_row)
                     res.append(res_row)
