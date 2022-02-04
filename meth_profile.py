@@ -62,11 +62,13 @@ def run_experiment(X, Y, window_size=20, test_percent=0.2, test_val_percent = 0.
 def experiments(config_list, context_list, dataset_size=50000, window_size=20, coverage_threshold=10):
     res = []
     for cnfg in config_list:
-        methylations = pg.get_methylations(cnfg, '', coverage_threshold)
+        methylations, num_to_chr_dic = pg.get_methylations(cnfg, '', coverage_threshold)
         for context in context_list:
             X, Y = profiler(methylations, context, dataset_size, window_size=window_size)
             acc = run_experiment(X, Y, window_size=20, test_percent=0.2, test_val_percent=0.5)
-            res.append([cnfg['organism_name'], context, acc])
+            res_row = [cnfg['organism_name'], context, acc]
+            print(res_row)
+            res.append(res_row)
             np.savetxt("meth_profiles.csv", res, delimiter =", ", fmt ='% s')
 
 config_list = config_list = [configs.Arabidopsis_config, configs.Cowpea_config, configs.Rice_config, configs.Cucumber_config, configs.Tomato_config]
