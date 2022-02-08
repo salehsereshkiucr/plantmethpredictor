@@ -43,11 +43,11 @@ def profiler(cnfg, methylations, context, datasize, window_size=20):
     smple = random.sample(list(avlbls), datasize)
     count_errored = 0
     for index, p in enumerate(smple):
-        try:
-            X[index] = np.concatenate((mlevels[p-half_w: p], mlevels[p+1: p+half_w+1]), axis=0)
-            Y[index] = 0 if mlevels[p] < 0.5 else 1
-        except ValueError:
-            count_errored += 1
+        #try:
+        X[index] = np.concatenate((mlevels[p-half_w: p], mlevels[p+1: p+half_w+1]), axis=0)
+        Y[index] = 0 if mlevels[p] < 0.5 else 1
+        #except ValueError:
+        #    count_errored += 1
     X = X.reshape(list(X.shape) + [1])
     print(count_errored, ' profiles faced error')
     return X, Y
