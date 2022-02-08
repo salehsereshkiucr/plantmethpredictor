@@ -11,7 +11,7 @@ import profile_generator as pg
 import configs as configs
 from os.path import exists
 
-def profiler(cnfg, methylations, context, datasize, window_size=20):
+def profiler(cnfg, methylations, context, datasize, window_size=20, from_file=False):
     organism_name = cnfg['organism_name']
     half_w = int(window_size/2)
     methylations = methylations.sort_values(["chr", "position"], ascending=(True, True))
@@ -32,7 +32,7 @@ def profiler(cnfg, methylations, context, datasize, window_size=20):
     mlevels = np.asarray(mlevels)
     X = np.zeros((datasize, window_size))
     Y = np.zeros(datasize)
-    if exists('./temporary_files/' +organism_name+'_meth_avlbls.npy'):
+    if from_file and exists('./temporary_files/' +organism_name+'_meth_avlbls.npy'):
         avlbls = np.load('./temporary_files/' +organism_name+'_meth_avlbls.npy')
     else:
         avlbls = np.asarray(idxs)
@@ -42,12 +42,14 @@ def profiler(cnfg, methylations, context, datasize, window_size=20):
         np.save('./temporary_files/' +organism_name+'_meth_avlbls.npy', avlbls)
     smple = random.sample(list(avlbls), datasize)
     count_errored = 0
+    print('border conditions: ', np.count_nonzero(np.asarray(smple) < half_w))
     for index, p in enumerate(smple):
-        #try:
-        X[index] = np.concatenate((mlevels[p-half_w: p], mlevels[p+1: p+half_w+1]), axis=0)
-        Y[index] = 0 if mlevels[p] < 0.5 else 1
-        #except ValueError:
-        #    count_errored += 1
+        try:
+            X[index] = np.concatenate((mlevels[p-half_w: p], mlevels[p+1: p+half_w+1]), axis=0)
+            Y[index] = 0 if mlevels[p] < 0.5 else 1
+        except ValueError:
+            print(index, p)
+            count_errored += 1
     X = X.reshape(list(X.shape) + [1])
     print(count_errored, ' profiles faced error')
     return X, Y
@@ -75,7 +77,7 @@ def experiments(config_list, context_list, dataset_size=50000, window_size=20, c
     for cnfg in config_list:
         methylations, num_to_chr_dic = pg.get_methylations(cnfg, '', coverage_threshold)
         for context in context_list:
-            X, Y = profiler(cnfg, methylations, context, dataset_size, window_size=window_size)
+            X, Y = profiler(cnfg, methylations, context, dataset_size, window_size=window_size, from_file=False)
             for test_config in config_list:
                 if cnfg['organism_name'] != test_config['organism_name']:
                     test_methylations, test_num_to_chr_dic = pg.get_methylations(test_config, '', coverage_threshold)
