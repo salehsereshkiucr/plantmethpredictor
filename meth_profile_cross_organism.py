@@ -19,8 +19,9 @@ def input_maker(methylations, datasize, window_size, organism_name, from_file, c
     chrnums = list(chrs_counts.index)
     sum = 0
     for i in range(len(chrnums)):
-        last_chr_pos[i] = sum+chrs_counts[i]-1
-        sum += chrs_counts[i]
+        if i in chrs_counts.keys():
+            last_chr_pos[i] = sum+chrs_counts[i]-1
+            sum += chrs_counts[i]
     # last_chr_pos ==> {0: 5524, 1: 1042784, 2: 1713034, 3: 2550983, 4: 3205486, 5: 4145381, 6: 4153872}
     # methylations.iloc[2550983] => chr 3.0 position    23459763.0
     # methylations.iloc[2550984] => chr 4.0 position    1007
