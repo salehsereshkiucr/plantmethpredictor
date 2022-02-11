@@ -12,8 +12,21 @@ import configs as configs
 from os.path import exists
 
 
-def input_maker(methylations, datasize, window_size, organism_name, from_file, last_chr_pos, half_w):
-    idxs = methylations['idx']
+def input_maker(methylations, datasize, window_size, organism_name, from_file, context, half_w):
+    methylations = methylations.sort_values(["chr", "position"], ascending=(True, True))
+    chrs_counts = methylations['chr'].value_counts()
+    last_chr_pos = {}
+    chrnums = list(chrs_counts.index)
+    sum = 0
+    for i in range(len(chrnums)):
+        last_chr_pos[i] = sum+chrs_counts[i]-1
+        sum += chrs_counts[i]
+    # last_chr_pos ==> {0: 5524, 1: 1042784, 2: 1713034, 3: 2550983, 4: 3205486, 5: 4145381, 6: 4153872}
+    # methylations.iloc[2550983] => chr 3.0 position    23459763.0
+    # methylations.iloc[2550984] => chr 4.0 position    1007
+    methylations.insert(0, 'idx', range(0, len(methylations)))
+    sub_methylations = methylations[methylations['context'] == context]
+    idxs = sub_methylations['idx']
     mlevels = methylations['mlevel']
     mlevels = np.asarray(mlevels)
     X = np.zeros((datasize, window_size))
@@ -45,24 +58,11 @@ def profiler(cnfg, methylations, context, datasize, window_size=20, from_file=Fa
     #methylations = methylations[(methylations['mlevel'] > 0.8) | (methylations['mlevel'] < 0.2)]
     organism_name = cnfg['organism_name']
     half_w = int(window_size/2)
-    methylations = methylations.sort_values(["chr", "position"], ascending=(True, True))
-    chrs_counts = methylations['chr'].value_counts()
-    last_chr_pos = {}
-    chrnums = list(chrs_counts.index)
-    sum = 0
-    for i in range(len(chrnums)):
-        last_chr_pos[i] = sum+chrs_counts[i]-1
-        sum += chrs_counts[i]
-    # last_chr_pos ==> {0: 5524, 1: 1042784, 2: 1713034, 3: 2550983, 4: 3205486, 5: 4145381, 6: 4153872}
-    # methylations.iloc[2550983] => chr 3.0 position    23459763.0
-    # methylations.iloc[2550984] => chr 4.0 position    1007
-    methylations.insert(0, 'idx', range(0, len(methylations)))
-    sub_methylations = methylations[methylations['context'] == context]
-    methylated = sub_methylations[sub_methylations['mlevel'] > threshold]
-    unmethylated = sub_methylations[sub_methylations['mlevel'] <= threshold]
+    methylated = methylations[methylations['mlevel'] > threshold]
+    unmethylated = methylations[methylations['mlevel'] <= threshold]
 
-    X_methylated, Y_methylated = input_maker(methylated, int(datasize/2), window_size, organism_name, from_file, last_chr_pos, half_w)
-    X_unmethylated, Y_unmethylated = input_maker(unmethylated, int(datasize/2), window_size, organism_name, from_file, last_chr_pos, half_w)
+    X_methylated, Y_methylated = input_maker(methylated, int(datasize/2), window_size, organism_name, from_file, context, half_w)
+    X_unmethylated, Y_unmethylated = input_maker(unmethylated, int(datasize/2), window_size, organism_name, from_file, context, half_w)
 
     return np.concatenate((X_methylated, X_unmethylated), axis=0), np.concatenate((Y_methylated, Y_unmethylated), axis=0)
 
