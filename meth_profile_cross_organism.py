@@ -42,7 +42,6 @@ def input_maker(methylations, datasize, window_size, organism_name, from_file, l
 
 
 def profiler(cnfg, methylations, context, datasize, window_size=20, from_file=False, threshold=0.5):
-    methylations['mlevel'] = methylations['meth'] /(methylations['meth'] + methylations['unmeth'])
     #methylations = methylations[(methylations['mlevel'] > 0.8) | (methylations['mlevel'] < 0.2)]
     organism_name = cnfg['organism_name']
     half_w = int(window_size/2)
