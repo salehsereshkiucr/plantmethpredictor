@@ -100,5 +100,5 @@ def experiments(config_list, context_list, dataset_size=50000, window_size=20, c
                     res_row = [cnfg['organism_name'], context, test_context, acc]
                     print(res_row)
                     res.append(res_row)
-                    np.savetxt("meth_profiles.csv", res, delimiter=", ", fmt ='% s')
+                    np.savetxt("meth_profiles_cc.csv", res, delimiter=", ", fmt ='% s')
 
