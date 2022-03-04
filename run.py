@@ -26,6 +26,8 @@ config_list = [configs.Rice_config, configs.Cucumber_config, configs.Tomato_conf
 
 res = pg.run_experiments([configs.Rice_config], ['CHH'], [3200], [(80, 40)], [0, 500000], coverage_threshold=10, include_annot=False)
 np.savetxt("GFG.csv", res, delimiter=", ", fmt='% s')
+
+
 # for i in range(6):
 #    res = pg.run_experiments([configs.Arabidopsis_config], context_list, [6400], [(80, 80)], [0, 200000], coverage_threshold=10, include_annot=False)
 #    for r in res:

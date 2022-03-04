@@ -13,6 +13,7 @@ def arabidopsis_annotation_compatibility(genes_df, sequences):
 def cowpea_annotation_compatibility(annot_df):
     annot_df = annot_df[~annot_df['chr'].str.contains('contig')]
     return annot_df
+
 def cowpea_methylation_compatibility(methylations):
     methylations = methylations[~methylations['chr'].str.contains('contig')]
     return methylations
